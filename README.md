@@ -6,13 +6,21 @@ A Python framework that lets AI agents from **any provider** collaborate in stru
 
 ## What is MACF?
 
-Most multi-agent systems lock you into a single AI provider. MACF doesn't. It uses [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) as a universal interface, so you can put **Claude Opus via Claude Code**, **Codex via Codex CLI**, **Gemini via Agentic clients**, or any other MCP-compatible agent into the same conference. They don't need to know about each other's internals — they just connect to the same MCP server and follow the protocol.
+Most multi-agent systems lock you into a single AI provider. MACF doesn't. It uses [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) as a universal interface, so you can put **Claude Opus via Claude Code**, **Codex via Codex CLI**, **Gemini via Antigravity**, or any other MCP-compatible agent into the same conference. They don't need to know about each other's internals — they just connect to the same MCP server and follow the protocol.
 
 This means you can assign different AI models to different roles based on their strengths: have Claude architect a system design while Codex writes the implementation while Gemini reviews for security issues — all in a single structured conversation with shared files, proper turn-taking, and a human moderator watching from a live dashboard.
 
 MACF handles everything else: round-based turn-taking so agents don't talk over each other, exclusive file locking so they don't overwrite each other's work, real-time observation via WebSocket, and automatic transcripts of every action. You configure a topic and roles, point your agents at the MCP server, and watch them collaborate.
 
 The entire system runs as a single Python process — a FastAPI dashboard on port 8000 and a FastMCP server on port 8001 sharing in-process state. No databases, no message queues, no external services.
+
+## Why Not Subagents or Agent Swarms?
+
+Most multi-agent frameworks — Claude's Agent SDK, OpenAI's Agents API, LangChain agent swarms — work by spawning sub-agents through a single provider's API. The orchestrator calls the same API to create every agent, which means all your agents run the same model from the same provider. You can't put a Claude agent and a Codex agent in the same swarm because the orchestrator only speaks one API. MACF doesn't have this limitation. It uses MCP as a universal interface, so any agent that speaks MCP can join regardless of which AI provider powers it. Claude Code, Codex CLI, Antigravity, or a custom MCP client all connect to the same server and follow the same conference protocol.
+
+There's a second problem with sub-agent systems: they call models via API, so you get whatever base model the API exposes. You don't get to use Claude Code (Opus with tool use and a full CLI environment), or Codex CLI (with its own tooling and shell access), or other agentic coding tools that wrap frontier models with their own capabilities. These tools connect via MCP, not via a sub-process API call. MACF works at this level — each agent is a full agentic coding tool running its own frontier model, not a thin API wrapper around a base model.
+
+This means you can assign different frontier models to different roles based on what they're actually good at. Instead of running three copies of the same model and hoping it can handle architecture, implementation, and code review equally well, you can have Claude architect the system while Codex writes the implementation while Gemini reviews for issues. Each agent brings its own strengths, its own tool environment, and its own model — and the conference protocol handles the coordination.
 
 ## Quick Start
 
@@ -35,9 +43,24 @@ Connect AI agents from any MCP-compatible client:
 ```bash
 # Claude Code
 claude mcp add --transport http macf http://127.0.0.1:8001/mcp
+```
 
-# Any MCP client (Claude Desktop, Codex, etc.) — add to your MCP config:
-# { "macf": { "type": "url", "url": "http://127.0.0.1:8001/mcp" } }
+Or add directly to your client's config file:
+
+```toml
+# Codex CLI (~/.codex/config.toml)
+[mcp_servers.macf]
+url = "http://127.0.0.1:8001/mcp"
+```
+
+```json
+// Antigravity (~/.gemini/antigravity/mcp_config.json)
+{ "mcpServers": { "macf": { "serverUrl": "http://127.0.0.1:8001/mcp" } } }
+```
+
+```json
+// Claude Desktop / other MCP clients (claude_desktop_config.json)
+{ "mcpServers": { "macf": { "type": "url", "url": "http://127.0.0.1:8001/mcp" } } }
 ```
 
 Then instruct each agent to use its MCP tools to register, read the briefing, and participate in the conference. Mix and match providers — the MCP protocol is the common language. The dashboard provides a ready-made agent prompt you can copy and paste.

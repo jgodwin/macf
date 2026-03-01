@@ -196,6 +196,7 @@
     .agent-status-thinking { background: #854d0e; color: #fef3c7; }
     .agent-status-acted { background: #1e40af; color: #bfdbfe; }
     .agent-status-disconnected { background: #991b1b; color: #fecaca; }
+    .agent-status-pending { background: #854d0e; color: #fef08a; }
 
     .board {
       flex: 1; display: flex; flex-direction: column; overflow: hidden;
@@ -380,6 +381,20 @@
           <pre id="mcpCmdText">Loading...</pre>
         </div>
 
+        <p style="font-size:13px; color:#94a3b8; margin-bottom:8px; font-weight:600;">Codex CLI</p>
+        <p style="font-size:12px; color:#64748b; margin-bottom:8px;">Add this to <code style="background:#1e293b; padding:2px 4px; border-radius:3px;">~/.codex/config.toml</code>:</p>
+        <div class="mcp-config prompt-box" style="margin-bottom:16px;">
+          <button class="btn-copy" id="btnCopyCodexCmd">Copy</button>
+          <pre id="codexCmdText">Loading...</pre>
+        </div>
+
+        <p style="font-size:13px; color:#94a3b8; margin-bottom:8px; font-weight:600;">Antigravity (Gemini)</p>
+        <p style="font-size:12px; color:#64748b; margin-bottom:8px;">Add this to <code style="background:#1e293b; padding:2px 4px; border-radius:3px;">~/.gemini/antigravity/mcp_config.json</code>:</p>
+        <div class="mcp-config prompt-box" style="margin-bottom:16px;">
+          <button class="btn-copy" id="btnCopyAntigravity">Copy</button>
+          <pre id="antigravityConfigText">Loading...</pre>
+        </div>
+
         <p style="font-size:13px; color:#94a3b8; margin-bottom:8px; font-weight:600;">Claude Desktop / other MCP clients</p>
         <p style="font-size:12px; color:#64748b; margin-bottom:8px;">Add this to your MCP client config (e.g. claude_desktop_config.json):</p>
         <div class="mcp-config prompt-box">
@@ -548,7 +563,7 @@
 
       if (event === "agent_joined" || event === "agent_left" ||
           event === "agent_acted" || event === "round_started" ||
-          event === "turn_started") {
+          event === "turn_started" || event === "client_connected") {
         fetchAgents();
       }
 
@@ -707,6 +722,15 @@
         mcpUrl = data.mcp_url;
         document.getElementById("mcpCmdText").textContent =
           "claude mcp add --transport http macf-conference " + mcpUrl;
+        document.getElementById("codexCmdText").textContent =
+          "[mcp_servers.macf-conference]\nurl = \"" + mcpUrl + "\"";
+        document.getElementById("antigravityConfigText").textContent = JSON.stringify({
+          "mcpServers": {
+            "macf-conference": {
+              "serverUrl": mcpUrl
+            }
+          }
+        }, null, 2);
         document.getElementById("mcpConfigText").textContent = JSON.stringify({
           "mcpServers": {
             "macf-conference": {
@@ -924,6 +948,12 @@
     });
     document.getElementById("btnCopyCmd").addEventListener("click", function() {
       copyToClipboard(document.getElementById("mcpCmdText").textContent, "btnCopyCmd");
+    });
+    document.getElementById("btnCopyCodexCmd").addEventListener("click", function() {
+      copyToClipboard(document.getElementById("codexCmdText").textContent, "btnCopyCodexCmd");
+    });
+    document.getElementById("btnCopyAntigravity").addEventListener("click", function() {
+      copyToClipboard(document.getElementById("antigravityConfigText").textContent, "btnCopyAntigravity");
     });
     document.getElementById("btnCopyMcp").addEventListener("click", function() {
       copyToClipboard(document.getElementById("mcpConfigText").textContent, "btnCopyMcp");

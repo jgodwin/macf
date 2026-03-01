@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
 from pathlib import Path
 
 from macf.models import ActionType, ConferenceState, ConferenceStatus
@@ -12,15 +11,11 @@ from macf.models import ActionType, ConferenceState, ConferenceStatus
 def generate_session_id(state: ConferenceState) -> str:
     """Generate a session ID in format YYYYMMDD-HHMMSS-xxxxxxxx.
 
-    Timestamp comes from the first round's started_at if rounds exist,
-    otherwise falls back to the current UTC time. The suffix is the
-    first 8 characters of the conference state id.
+    Uses the state's created_at timestamp and the first 8 characters
+    of the conference state id. This is deterministic for a given state
+    object — calling it multiple times always returns the same result.
     """
-    if state.rounds:
-        ts = state.rounds[0].started_at
-    else:
-        ts = datetime.now(timezone.utc)
-    return ts.strftime("%Y%m%d-%H%M%S") + "-" + state.id[:8]
+    return state.created_at.strftime("%Y%m%d-%H%M%S") + "-" + state.id[:8]
 
 
 def write_transcript(state: ConferenceState, output_path: Path) -> bool:

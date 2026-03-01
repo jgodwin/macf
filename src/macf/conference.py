@@ -10,6 +10,7 @@ from macf.models import (
     ConferenceConfig,
     ConferenceState,
     ConferenceStatus,
+    McpClient,
     Message,
     RoleConfig,
     Round,
@@ -31,16 +32,19 @@ TURN ORDER:
 - Round 1 is parallel: all agents may act in any order.
 - Round 2 and beyond use round-robin turn taking: agents act one at a time in a fixed order.
 - Call get_round_info() to see the turn_order and current_turn fields to know whose turn it is.
-- If it is not your turn, wait and poll get_round_info() until current_turn shows your name.
+- After acting, call wait_for_turn(agent_id) to block until it is your turn again. Do NOT poll in a loop.
 
 WORKFLOW:
 1. Call register_agent with your assigned name and role to join the conference.
 2. Call get_board to read all previous messages before responding.
 3. Call get_round_info to see the turn order and whose turn it is.
 4. If it is your turn, take your action: post_message, pass_turn, or vote_to_end.
-5. If it is not your turn, wait and poll get_round_info until it is.
-6. After acting, wait and poll get_round_info or get_conference_status until the next round starts.
-7. Repeat from step 2.
+5. After acting, call wait_for_turn(agent_id) — this blocks until it is your turn again or the conference ends. Do NOT poll in a loop.
+6. Repeat from step 2.
+
+TIMEOUTS:
+- Use long timeouts (at least 300 seconds) for ALL MCP tool calls. Many tools block while waiting for the conference to be configured or for other agents to act. Short timeouts will cause premature failures.
+- When polling (get_round_info, get_conference_status), wait at least 10 seconds between calls.
 
 COLLABORATION:
 - Read what others have posted before responding. Build on their ideas.
@@ -56,6 +60,7 @@ class ConferenceManager:
         self._roles = roles or []
         self._event_listeners: list[Callable[[str, dict], Coroutine]] = []
         self._configured = asyncio.Event()
+        self._mcp_clients: dict[str, McpClient] = {}
         self._turn_order: list[str] = []
         self._current_turn_index: int = 0
         if topic:  # Already configured at construction time
@@ -87,11 +92,13 @@ class ConferenceManager:
 
     def _emit(self, event_type: str, data: dict) -> None:
         for listener in self._event_listeners:
+            coro = listener(event_type, data)
             try:
                 loop = asyncio.get_running_loop()
-                loop.create_task(listener(event_type, data))
+                loop.create_task(coro)
             except RuntimeError:
-                pass  # No running loop (sync context / tests)
+                # No running loop (sync context / tests) — run inline
+                asyncio.get_event_loop().run_until_complete(coro)
 
     def _active_agent_ids(self) -> set[str]:
         return {
@@ -99,7 +106,14 @@ class ConferenceManager:
             if a.status != AgentStatus.DISCONNECTED
         }
 
-    def register_agent(self, name: str, role: str = "", instructions: str = "") -> str:
+    def track_mcp_client(self, client_id: str) -> None:
+        """Track an MCP client connection. Called on every tool invocation."""
+        if client_id and client_id not in self._mcp_clients:
+            client = McpClient(client_id=client_id)
+            self._mcp_clients[client_id] = client
+            self._emit("client_connected", {"client_id": client_id})
+
+    def register_agent(self, name: str, role: str = "", instructions: str = "", client_id: str = "") -> str:
         for a in self.state.agents.values():
             if a.name == name and a.status != AgentStatus.DISCONNECTED:
                 raise ValueError(f"Agent '{name}' already registered")
@@ -111,6 +125,8 @@ class ConferenceManager:
                 break
         agent = AgentInfo(name=name, role=role, instructions=instructions)
         self.state.agents[agent.id] = agent
+        if client_id and client_id in self._mcp_clients:
+            self._mcp_clients[client_id].agent_id = agent.id
         self._emit("agent_joined", {"agent_id": agent.id, "name": name, "role": role})
         return agent.id
 
@@ -323,6 +339,7 @@ class ConferenceManager:
         old_state = self.state
         self.state = ConferenceState(topic="", goal="")
         self._roles = []
+        self._mcp_clients = {}
         self._configured = asyncio.Event()
         self._turn_order = []
         self._current_turn_index = 0
@@ -376,7 +393,7 @@ class ConferenceManager:
         return result
 
     def get_agents_info(self) -> list[dict]:
-        return [
+        result = [
             {
                 "id": a.id,
                 "name": a.name,
@@ -385,6 +402,15 @@ class ConferenceManager:
             }
             for a in self.state.agents.values()
         ]
+        for client in self._mcp_clients.values():
+            if client.agent_id is None:
+                result.append({
+                    "id": client.client_id,
+                    "name": f"MCP Client ({client.client_id})",
+                    "role": "",
+                    "status": "pending",
+                })
+        return result
 
     def get_available_roles(self) -> list[dict]:
         """Return pre-defined roles that haven't been claimed yet."""
@@ -476,13 +502,13 @@ The conference runs in rounds. Each round you MUST take exactly one action:
 **Round 1** is parallel: all agents may act in any order.
 
 **Round 2+** uses round-robin turn taking: agents act one at a time in a fixed order.
-Call `get_round_info()` to see `turn_order` and `current_turn`. If it is not your turn, wait and poll `get_round_info()` until `current_turn` shows your name.
+Call `get_round_info()` to see `turn_order` and `current_turn`.
 
 Before acting each round:
 - Call `get_board()` to read what others have posted.
 - Call `get_round_info()` to check whose turn it is.
 
-After acting, poll `get_conference_status()` until the next round starts or the conference ends.
+After acting, call `wait_for_turn(agent_id)` to block until it is your turn again or the conference ends. Do NOT poll in a loop — `wait_for_turn` handles all the waiting server-side.
 
 ## Shared Files
 
@@ -494,7 +520,8 @@ If the task involves producing a document or artifact:
 
 ## Important
 
-- You can only act ONCE per round. After posting/passing/voting, wait for the next round.
+- **Use long timeouts (at least 300 seconds) for ALL MCP tool calls.** Many tools block while waiting for the conference to be configured or for other agents to act. Short timeouts will cause failures.
+- You can only act ONCE per round. After posting/passing/voting, call `wait_for_turn(agent_id)` to wait for your next turn.
 - A round completes when ALL agents have acted. Then the next round starts automatically.
 - The conference ends when a majority of agents vote to end in the same round.
 - Stay focused on the goal. Be concise. Build on what others have said.

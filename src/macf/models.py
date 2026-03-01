@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 
 class AgentStatus(str, Enum):
+    PENDING = "pending"
     CONNECTED = "connected"
     THINKING = "thinking"
     ACTED = "acted"
@@ -37,6 +38,12 @@ def _uuid() -> str:
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+class McpClient(BaseModel):
+    client_id: str
+    connected_at: datetime = Field(default_factory=_now)
+    agent_id: str | None = None
 
 
 class AgentInfo(BaseModel):
@@ -94,6 +101,7 @@ class ConferenceConfig(BaseModel):
 
 class ConferenceState(BaseModel):
     id: str = Field(default_factory=_uuid)
+    created_at: datetime = Field(default_factory=_now)
     topic: str
     goal: str = ""
     status: ConferenceStatus = ConferenceStatus.WAITING

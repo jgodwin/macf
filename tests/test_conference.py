@@ -362,3 +362,71 @@ def test_disconnected_agent_skipped_in_turn_order(conf):
     conf.post_message(a2, "r2")
     conf.post_message(a3, "r2")
     assert conf.state.current_round == 3
+
+
+# --- MCP client tracking tests ---
+
+def test_track_mcp_client_new(conf):
+    """New client_id creates an McpClient and emits client_connected event."""
+    events = []
+    async def listener(event_type, data):
+        events.append((event_type, data))
+    conf.on_event(listener)
+    conf.track_mcp_client("client-abc")
+    assert "client-abc" in conf._mcp_clients
+    assert conf._mcp_clients["client-abc"].agent_id is None
+    assert any(e[0] == "client_connected" for e in events)
+
+
+def test_track_mcp_client_duplicate(conf):
+    """Tracking the same client_id twice is idempotent."""
+    events = []
+    async def listener(event_type, data):
+        events.append((event_type, data))
+    conf.on_event(listener)
+    conf.track_mcp_client("client-abc")
+    conf.track_mcp_client("client-abc")
+    connected_events = [e for e in events if e[0] == "client_connected"]
+    assert len(connected_events) == 1
+
+
+def test_track_mcp_client_empty_id(conf):
+    """Empty client_id is ignored."""
+    conf.track_mcp_client("")
+    assert len(conf._mcp_clients) == 0
+
+
+def test_mcp_client_linked_on_register(conf):
+    """After register_agent with client_id, McpClient.agent_id is set."""
+    conf.track_mcp_client("client-xyz")
+    agent_id = conf.register_agent("Alice", client_id="client-xyz")
+    assert conf._mcp_clients["client-xyz"].agent_id == agent_id
+
+
+def test_pending_clients_in_agents_info(conf):
+    """Unlinked MCP clients appear in get_agents_info with status 'pending'."""
+    conf.track_mcp_client("client-111")
+    info = conf.get_agents_info()
+    pending = [a for a in info if a["status"] == "pending"]
+    assert len(pending) == 1
+    assert pending[0]["id"] == "client-111"
+    assert "client-111" in pending[0]["name"]
+
+
+def test_linked_clients_not_pending(conf):
+    """Linked MCP clients don't appear as separate pending entries."""
+    conf.track_mcp_client("client-222")
+    conf.register_agent("Bob", client_id="client-222")
+    info = conf.get_agents_info()
+    pending = [a for a in info if a["status"] == "pending"]
+    assert len(pending) == 0
+    # Bob should appear as a regular agent
+    agents = [a for a in info if a["name"] == "Bob"]
+    assert len(agents) == 1
+
+
+def test_reset_clears_mcp_clients(conf):
+    """reset() clears _mcp_clients."""
+    conf.track_mcp_client("client-333")
+    conf.reset()
+    assert len(conf._mcp_clients) == 0
