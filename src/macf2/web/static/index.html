@@ -296,10 +296,17 @@
 
       <!-- MCP Config -->
       <div class="setup-section">
-        <h3>MCP Server Config (for claude_desktop_config.json)</h3>
-        <p style="font-size:13px; color:#94a3b8; margin-bottom:12px;">
-          Add this to your MCP client config to connect to the conference server.
-        </p>
+        <h3>MCP Connection</h3>
+
+        <p style="font-size:13px; color:#94a3b8; margin-bottom:8px; font-weight:600;">Claude Code (CLI)</p>
+        <p style="font-size:12px; color:#64748b; margin-bottom:8px;">Run this command to add the MCP server:</p>
+        <div class="mcp-config prompt-box" style="margin-bottom:16px;">
+          <button class="btn-copy" id="btnCopyCmd">Copy</button>
+          <pre id="mcpCmdText">Loading...</pre>
+        </div>
+
+        <p style="font-size:13px; color:#94a3b8; margin-bottom:8px; font-weight:600;">Claude Desktop / other MCP clients</p>
+        <p style="font-size:12px; color:#64748b; margin-bottom:8px;">Add this to your MCP client config (e.g. claude_desktop_config.json):</p>
         <div class="mcp-config prompt-box">
           <button class="btn-copy" id="btnCopyMcp">Copy</button>
           <pre id="mcpConfigText">Loading...</pre>
@@ -567,9 +574,12 @@
         var data = await resp.json();
         document.getElementById("promptText").textContent = data.prompt;
         mcpUrl = data.mcp_url;
+        document.getElementById("mcpCmdText").textContent =
+          "claude mcp add macf2-conference " + mcpUrl;
         document.getElementById("mcpConfigText").textContent = JSON.stringify({
           "mcpServers": {
             "macf2-conference": {
+              "type": "url",
               "url": mcpUrl
             }
           }
@@ -722,6 +732,9 @@
     document.getElementById("btnAddRole").addEventListener("click", addRole);
     document.getElementById("btnCopyPrompt").addEventListener("click", function() {
       copyToClipboard(document.getElementById("promptText").textContent, "btnCopyPrompt");
+    });
+    document.getElementById("btnCopyCmd").addEventListener("click", function() {
+      copyToClipboard(document.getElementById("mcpCmdText").textContent, "btnCopyCmd");
     });
     document.getElementById("btnCopyMcp").addEventListener("click", function() {
       copyToClipboard(document.getElementById("mcpConfigText").textContent, "btnCopyMcp");
