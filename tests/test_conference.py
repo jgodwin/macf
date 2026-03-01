@@ -238,3 +238,127 @@ async def test_wait_for_configuration_blocks_then_resolves():
     await asyncio.sleep(0.05)
     assert resolved is True  # Unblocked
     await task
+
+
+def test_round1_allows_any_order(conf):
+    """Round 1 should allow agents to act in any order (parallel)."""
+    a1 = conf.register_agent("A1")
+    a2 = conf.register_agent("A2")
+    a3 = conf.register_agent("A3")
+    conf.start()
+    # Any agent can act first in round 1
+    conf.post_message(a3, "I go first")
+    conf.post_message(a1, "I go second")
+    conf.pass_turn(a2)
+    # Round should advance
+    assert conf.state.current_round == 2
+
+
+def test_round2_enforces_turn_order(conf):
+    """Round 2+ should enforce round-robin turn taking."""
+    a1 = conf.register_agent("A1")
+    a2 = conf.register_agent("A2")
+    conf.start()
+    # Complete round 1 (any order)
+    conf.post_message(a1, "round 1")
+    conf.pass_turn(a2)
+    # Now in round 2 -- turn order is [a1, a2] (registration order)
+    assert conf.state.current_round == 2
+    # a2 should NOT be able to act before a1
+    with pytest.raises(ValueError, match="Not your turn"):
+        conf.post_message(a2, "out of turn")
+    # a1 acts first
+    conf.post_message(a1, "my turn")
+    # Now a2 can act
+    conf.post_message(a2, "my turn now")
+    assert conf.state.current_round == 3
+
+
+def test_round2_turn_order_matches_registration(conf):
+    """Turn order should match the order agents registered."""
+    a1 = conf.register_agent("A1")
+    a2 = conf.register_agent("A2")
+    a3 = conf.register_agent("A3")
+    conf.start()
+    # Complete round 1
+    conf.post_message(a1, "r1")
+    conf.post_message(a2, "r1")
+    conf.post_message(a3, "r1")
+    # Round 2: must go a1 -> a2 -> a3
+    assert conf.state.current_round == 2
+    conf.post_message(a1, "r2 first")
+    with pytest.raises(ValueError, match="Not your turn"):
+        conf.post_message(a3, "skip a2")
+    conf.post_message(a2, "r2 second")
+    conf.post_message(a3, "r2 third")
+    assert conf.state.current_round == 3
+
+
+def test_get_round_info_includes_turn_info(conf):
+    """get_round_info should include turn_order and current_turn for round 2+."""
+    a1 = conf.register_agent("A1")
+    a2 = conf.register_agent("A2")
+    conf.start()
+    # Round 1: no turn info
+    info = conf.get_round_info()
+    assert "current_turn" not in info
+    # Complete round 1
+    conf.post_message(a1, "r1")
+    conf.pass_turn(a2)
+    # Round 2: should have turn info
+    info = conf.get_round_info()
+    assert info["turn_order"] == ["A1", "A2"]
+    assert info["current_turn"] == "A1"
+    # After a1 acts, current_turn should be a2
+    conf.post_message(a1, "r2")
+    info = conf.get_round_info()
+    assert info["current_turn"] == "A2"
+
+
+def test_pass_turn_advances_round_robin(conf):
+    """pass_turn should work the same as post_message for turn advancement."""
+    a1 = conf.register_agent("A1")
+    a2 = conf.register_agent("A2")
+    conf.start()
+    conf.pass_turn(a1)
+    conf.pass_turn(a2)
+    # Round 2
+    assert conf.state.current_round == 2
+    conf.pass_turn(a1)  # a1's turn
+    conf.pass_turn(a2)  # a2's turn
+    assert conf.state.current_round == 3
+
+
+def test_vote_to_end_respects_turn_order(conf):
+    """vote_to_end should also respect round-robin in round 2+."""
+    a1 = conf.register_agent("A1")
+    a2 = conf.register_agent("A2")
+    conf.start()
+    conf.pass_turn(a1)
+    conf.pass_turn(a2)
+    # Round 2
+    with pytest.raises(ValueError, match="Not your turn"):
+        conf.vote_to_end(a2)
+    conf.vote_to_end(a1)
+    conf.vote_to_end(a2)
+    assert conf.state.status == ConferenceStatus.COMPLETED
+
+
+def test_disconnected_agent_skipped_in_turn_order(conf):
+    """If an agent disconnects, they should be skipped in the turn order."""
+    a1 = conf.register_agent("A1")
+    a2 = conf.register_agent("A2")
+    a3 = conf.register_agent("A3")
+    conf.start()
+    # Complete round 1
+    conf.post_message(a1, "r1")
+    conf.post_message(a2, "r1")
+    conf.post_message(a3, "r1")
+    # Round 2: disconnect a1 (who would be first)
+    conf.unregister_agent(a1)
+    # a2 should now be the current turn (a1 skipped)
+    info = conf.get_round_info()
+    assert info["current_turn"] == "A2"
+    conf.post_message(a2, "r2")
+    conf.post_message(a3, "r2")
+    assert conf.state.current_round == 3

@@ -519,6 +519,11 @@
 
         renderAgents(data.agents);
         renderAllMessages(data.messages);
+        // Collapse all round groups except the last one
+        var allGroups = document.querySelectorAll(".round-group");
+        for (var i = 0; i < allGroups.length - 1; i++) {
+          allGroups[i].classList.add("collapsed");
+        }
         switchView(data.status);
         loadPrompt();
         return;
@@ -542,13 +547,28 @@
       }
 
       if (event === "agent_joined" || event === "agent_left" ||
-          event === "agent_acted" || event === "round_started") {
+          event === "agent_acted" || event === "round_started" ||
+          event === "turn_started") {
         fetchAgents();
+      }
+
+      if (event === "turn_started") {
+        document.getElementById("roundBadge").textContent =
+          "Round: " + currentRound + " \u2014 " + data.agent_name + "'s turn";
       }
 
       if (event === "round_started") {
         updateRound(data.round_number);
+        // Auto-collapse all previous round groups
+        document.querySelectorAll(".round-group").forEach(function(group) {
+          group.classList.add("collapsed");
+        });
         addRoundSeparator(data.round_number);
+        // Show turn info if available (round 2+)
+        if (data.current_turn) {
+          document.getElementById("roundBadge").textContent =
+            "Round: " + data.round_number + " \u2014 " + data.current_turn + "'s turn";
+        }
       }
 
       if (event === "message_posted") {

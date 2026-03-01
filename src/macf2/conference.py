@@ -27,13 +27,20 @@ ROUND PROTOCOL:
 - A round completes when ALL agents have acted. Then the next round begins automatically.
 - If a majority of agents vote_to_end in the same round, the conference concludes.
 
+TURN ORDER:
+- Round 1 is parallel: all agents may act in any order.
+- Round 2 and beyond use round-robin turn taking: agents act one at a time in a fixed order.
+- Call get_round_info() to see the turn_order and current_turn fields to know whose turn it is.
+- If it is not your turn, wait and poll get_round_info() until current_turn shows your name.
+
 WORKFLOW:
 1. Call register_agent with your assigned name and role to join the conference.
 2. Call get_board to read all previous messages before responding.
-3. Call get_round_info to see who has acted and who is pending this round.
-4. Take your action: post_message, pass_turn, or vote_to_end.
-5. After acting, wait and poll get_round_info or get_conference_status until the next round starts.
-6. Repeat from step 2.
+3. Call get_round_info to see the turn order and whose turn it is.
+4. If it is your turn, take your action: post_message, pass_turn, or vote_to_end.
+5. If it is not your turn, wait and poll get_round_info until it is.
+6. After acting, wait and poll get_round_info or get_conference_status until the next round starts.
+7. Repeat from step 2.
 
 COLLABORATION:
 - Read what others have posted before responding. Build on their ideas.
@@ -49,6 +56,8 @@ class ConferenceManager:
         self._roles = roles or []
         self._event_listeners: list[Callable[[str, dict], Coroutine]] = []
         self._configured = asyncio.Event()
+        self._turn_order: list[str] = []
+        self._current_turn_index: int = 0
         if topic:  # Already configured at construction time
             self._configured.set()
 
@@ -110,12 +119,34 @@ class ConferenceManager:
             raise ValueError(f"Unknown agent: {agent_id}")
         self.state.agents[agent_id].status = AgentStatus.DISCONNECTED
         self._emit("agent_left", {"agent_id": agent_id})
+        # Handle disconnection mid-turn in round-robin mode
+        if (self.state.status == ConferenceStatus.ACTIVE
+                and self.state.current_round > 1
+                and self._turn_order
+                and self._current_turn_index < len(self._turn_order)
+                and self._turn_order[self._current_turn_index] == agent_id):
+            current = self._current_round()
+            active = self._active_agent_ids()
+            if current.all_acted(active):
+                self._check_round_complete()
+            elif current.status == RoundStatus.ACTIVE:
+                self._advance_to_next_active_turn()
+                if self._current_turn_index < len(self._turn_order):
+                    next_id = self._turn_order[self._current_turn_index]
+                    if next_id in active:
+                        self.state.agents[next_id].status = AgentStatus.THINKING
+                        self._emit("turn_started", {
+                            "agent_id": next_id,
+                            "agent_name": self.state.agents[next_id].name,
+                            "round_number": current.number,
+                        })
 
     def start(self) -> None:
         active = self._active_agent_ids()
         if len(active) < 2:
             raise ValueError("Need at least 2 agents to start")
         self.state.status = ConferenceStatus.ACTIVE
+        self._turn_order = [aid for aid in self.state.agents if aid in active]
         self._start_new_round()
         self._emit("conference_started", {"topic": self.state.topic})
 
@@ -123,9 +154,49 @@ class ConferenceManager:
         self.state.current_round += 1
         new_round = Round(number=self.state.current_round)
         self.state.rounds.append(new_round)
-        for aid in self._active_agent_ids():
-            self.state.agents[aid].status = AgentStatus.THINKING
-        self._emit("round_started", {"round_number": self.state.current_round})
+        self._current_turn_index = 0
+        active = self._active_agent_ids()
+
+        if self.state.current_round == 1:
+            # Round 1: parallel — all agents think at once
+            for aid in active:
+                self.state.agents[aid].status = AgentStatus.THINKING
+            self._emit("round_started", {"round_number": self.state.current_round})
+        else:
+            # Round 2+: round-robin turn taking
+            self._advance_to_next_active_turn()
+            for aid in active:
+                if (self._current_turn_index < len(self._turn_order)
+                        and aid == self._turn_order[self._current_turn_index]):
+                    self.state.agents[aid].status = AgentStatus.THINKING
+                else:
+                    self.state.agents[aid].status = AgentStatus.CONNECTED
+            active_turn_order = [
+                self.state.agents[aid].name
+                for aid in self._turn_order
+                if aid in active
+            ]
+            current_turn_name = (
+                self.state.agents[self._turn_order[self._current_turn_index]].name
+                if self._current_turn_index < len(self._turn_order)
+                else None
+            )
+            self._emit("round_started", {
+                "round_number": self.state.current_round,
+                "turn_order": active_turn_order,
+                "current_turn": current_turn_name,
+            })
+
+    def _advance_to_next_active_turn(self) -> None:
+        """Skip disconnected agents by incrementing _current_turn_index."""
+        active = self._active_agent_ids()
+        attempts = 0
+        while (self._current_turn_index < len(self._turn_order)
+               and self._turn_order[self._current_turn_index] not in active):
+            self._current_turn_index += 1
+            attempts += 1
+            if attempts >= len(self._turn_order):
+                break
 
     def _current_round(self) -> Round:
         if not self.state.rounds:
@@ -148,6 +219,13 @@ class ConferenceManager:
         current = self._current_round()
         if agent_id in current.actions:
             raise ValueError("Agent already acted this round")
+        # Enforce turn order for rounds > 1
+        if self.state.current_round > 1:
+            expected_id = self._turn_order[self._current_turn_index]
+            if agent_id != expected_id:
+                expected_name = self.state.agents[expected_id].name
+                agent_name = self.state.agents[agent_id].name
+                raise ValueError(f"Not your turn. It is {expected_name}'s turn, not {agent_name}'s.")
         current.actions[agent_id] = action
         self.state.agents[agent_id].status = AgentStatus.ACTED
         self._emit("agent_acted", {
@@ -156,7 +234,10 @@ class ConferenceManager:
             "action_type": action.type.value,
             "round_number": current.number,
         })
-        self._check_round_complete()
+        if self.state.current_round > 1:
+            self._advance_after_action()
+        else:
+            self._check_round_complete()
 
     def post_message(self, agent_id: str, content: str) -> bool:
         agent = self.state.agents[agent_id]
@@ -192,6 +273,32 @@ class ConferenceManager:
             RoundAction(agent_id=agent_id, type=ActionType.VOTE_TO_END),
         )
 
+    def _advance_after_action(self) -> None:
+        """After an agent acts in round-robin mode, advance to next turn or complete round."""
+        active = self._active_agent_ids()
+        current = self._current_round()
+        self._current_turn_index += 1
+        if current.all_acted(active):
+            current.status = RoundStatus.COMPLETED
+            from macf2.models import _now
+            current.ended_at = _now()
+            votes = current.end_vote_count()
+            if votes > len(active) / 2:
+                self.state.status = ConferenceStatus.COMPLETED
+                self._emit("conference_ended", {"reason": "majority_vote"})
+            else:
+                self._start_new_round()
+        else:
+            self._advance_to_next_active_turn()
+            if self._current_turn_index < len(self._turn_order):
+                next_id = self._turn_order[self._current_turn_index]
+                self.state.agents[next_id].status = AgentStatus.THINKING
+                self._emit("turn_started", {
+                    "agent_id": next_id,
+                    "agent_name": self.state.agents[next_id].name,
+                    "round_number": current.number,
+                })
+
     def _check_round_complete(self) -> None:
         current = self._current_round()
         active = self._active_agent_ids()
@@ -213,10 +320,13 @@ class ConferenceManager:
 
     def reset(self) -> None:
         """Reset all state back to a fresh conference."""
+        old_state = self.state
         self.state = ConferenceState(topic="", goal="")
         self._roles = []
         self._configured = asyncio.Event()
-        self._emit("conference_reset", {})
+        self._turn_order = []
+        self._current_turn_index = 0
+        self._emit("conference_reset", {"old_state": old_state})
 
     def add_moderator_message(self, content: str) -> None:
         msg = Message(
@@ -240,7 +350,7 @@ class ConferenceManager:
         pending_names = [
             self.state.agents[aid].name for aid in pending_ids
         ]
-        return {
+        result = {
             "round_number": current.number,
             "status": current.status.value,
             "acted": [
@@ -252,6 +362,18 @@ class ConferenceManager:
             ],
             "pending": pending_names,
         }
+        if current.number > 1 and self._turn_order:
+            active_turn_order = [
+                self.state.agents[aid].name
+                for aid in self._turn_order
+                if aid in active
+            ]
+            result["turn_order"] = active_turn_order
+            if current.status == RoundStatus.ACTIVE and self._current_turn_index < len(self._turn_order):
+                result["current_turn"] = self.state.agents[self._turn_order[self._current_turn_index]].name
+            else:
+                result["current_turn"] = None
+        return result
 
     def get_agents_info(self) -> list[dict]:
         return [
@@ -351,9 +473,14 @@ The conference runs in rounds. Each round you MUST take exactly one action:
 - `pass_turn(agent_id)` — skip this round if you have nothing to add
 - `vote_to_end(agent_id)` — signal that the goal has been met
 
+**Round 1** is parallel: all agents may act in any order.
+
+**Round 2+** uses round-robin turn taking: agents act one at a time in a fixed order.
+Call `get_round_info()` to see `turn_order` and `current_turn`. If it is not your turn, wait and poll `get_round_info()` until `current_turn` shows your name.
+
 Before acting each round:
 - Call `get_board()` to read what others have posted.
-- Call `get_round_info()` to see who has acted and who is still pending.
+- Call `get_round_info()` to check whose turn it is.
 
 After acting, poll `get_conference_status()` until the next round starts or the conference ends.
 
