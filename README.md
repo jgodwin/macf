@@ -1,8 +1,16 @@
+<p align="center"><img src="docs/banner.svg" alt="MACF2 - Multi-Agent Conference Framework" width="800"></p>
+
 # MACF2 — Multi-Agent Conference Framework
 
-A structured round-based protocol for AI agent collaboration via MCP (Model Context Protocol), observed through a real-time browser dashboard.
+A Python framework for structured, round-based AI agent collaboration via MCP, observed through a real-time browser dashboard.
 
-**Version:** 0.1.0 | **Python:** >=3.11
+## What is MACF2?
+
+When you want multiple AI agents to work together on a problem — designing an API, writing a document, conducting a code review — you need more than just a shared chat window. You need structured turn-taking so agents don't talk over each other, shared file access with proper locking so they don't overwrite each other's work, a way for a human moderator to observe and intervene, and automatic transcripts of everything that happened.
+
+MACF2 provides all of this. It is a conference server that any MCP-compatible AI agent (Claude, etc.) can connect to. You configure a topic and roles, point your agents at the MCP server, and watch them collaborate from a live dashboard. The framework enforces a round-based protocol: each round, every agent must post a message, pass, or vote to end. When a majority votes to end, the conference completes and a transcript is saved.
+
+The entire system runs as a single Python process — a FastAPI dashboard on port 8000 and a FastMCP server on port 8001 sharing in-process state. No databases, no message queues, no external services.
 
 ## Quick Start
 
@@ -10,124 +18,90 @@ A structured round-based protocol for AI agent collaboration via MCP (Model Cont
 # Install
 pip install -e .
 
-# Run
-python -m macf2.main
+# Run with a topic
+python -m macf2.main --topic "API Design Review" --goal "Design a REST API for task management"
+
+# Or run with a JSON config
+python -m macf2.main --config examples/api_design_conference.json
 
 # Open the dashboard
 open http://127.0.0.1:8000
 ```
 
-1. Configure the conference in the dashboard (topic, goal, roles).
-2. Copy the generic agent prompt from the dashboard.
-3. Paste it into one or more AI agent harnesses (Claude Code, Codex, etc.).
-4. Agents connect via MCP, register, and begin collaborating.
+Connect an AI agent (e.g., Claude Code) to the MCP server:
+
+```bash
+claude mcp add --transport http macf2 http://127.0.0.1:8001/mcp
+```
+
+Then instruct the agent to use its MCP tools to register, read the briefing, and participate in the conference. The dashboard provides a ready-made agent prompt you can copy and paste.
 
 ## How It Works
 
-The moderator starts the server and opens the browser dashboard to configure the conference: a topic, a goal, and a set of roles. The dashboard provides a generic agent prompt that can be pasted into any AI agent harness. Agents connect to the MCP server, register themselves, and receive a briefing.
+A conference follows this lifecycle:
 
-Collaboration proceeds in rounds. Each round, every agent must take exactly one action:
+```
+WAITING → (configure topic/roles, agents connect) → ACTIVE → (rounds of discussion) → COMPLETED or HALTED
+```
+
+**Round 1** is parallel — all agents act in any order. **Round 2+** is round-robin — agents take turns in registration order. Each round, every agent must take exactly one action:
 
 - **Post a message** to the shared board
 - **Pass** their turn
 - **Vote to end** the conference
 
-When all agents have acted, the round advances. When a majority of agents vote to end, the conference completes. The moderator can observe the conversation in real-time, send messages, or halt the conference at any time.
-
-## Architecture
-
-The system is organized into three layers:
-
-```
-Browser Dashboard (Setup + Conference views)
-        |
-        v
-  REST API + WebSocket ──── Interface Layer
-        |
-        v
-  MCP Server (FastMCP) ──── Protocol Layer (15 tools)
-        |
-        v
-  ConferenceManager + FileManager ──── Conference Core
-```
-
-**Conference Core** — `ConferenceManager` orchestrates rounds, tracks agent state, and enforces protocol rules. `FileManager` provides a shared file workspace with exclusive write locking.
-
-**Protocol Layer** — An MCP server built with FastMCP exposes 15 tools for agents to interact with the conference. A REST API and WebSocket endpoint serve the dashboard.
-
-**Interface Layer** — A browser dashboard with two views (Setup and Conference) for moderator control and real-time observation. A generic agent prompt template works with any agent harness.
+When all agents have acted, the round advances. When a majority (>50%) of active agents vote to end, the conference completes. The moderator can send messages or halt the conference at any time.
 
 ## Dashboard
 
-### Setup View
+The dashboard has two views:
 
-- Configure the conference topic, goal, and roles
-- Copy the generic agent prompt to clipboard
-- See connected agents and their assigned roles
-- Start the conference when ready
+**Setup View** — Configure the conference topic, goal, and roles. Copy a ready-made agent prompt to your clipboard. See the MCP connection config. Monitor agents as they connect.
 
-### Conference View
-
-- Agent sidebar showing status (THINKING / ACTED / DISCONNECTED)
-- Message board with full conversation history
-- Moderator controls: send messages, halt the conference
-- Real-time updates via WebSocket
-
-## Agent Protocol
-
-Conference status progresses through: `WAITING` -> `ACTIVE` -> `COMPLETED` or `HALTED`
-
-Agent status within each round: `CONNECTED` -> `THINKING` (at round start) -> `ACTED` (after action) or `DISCONNECTED`
-
-**Round lifecycle:**
-
-1. A new round begins. All active agents are set to `THINKING`.
-2. Each agent must take exactly one action: `post_message`, `pass_turn`, or `vote_to_end`.
-3. When all active agents have acted, the round auto-advances.
-4. If a majority (>50%) of active agents vote to end, the conference completes.
-5. The moderator can halt the conference at any time, regardless of round state.
-
-**Blocking behavior:** `register_agent` and `get_available_roles` block (via `asyncio.Event`) until the moderator has configured the conference through the dashboard. This allows agents to connect before configuration is complete.
+**Conference View** — Live message board with color-coded agents (8-color palette), collapsible round sections that auto-collapse previous rounds, and markdown rendering (marked.js + DOMPurify). Moderator controls for sending messages, halting the conference, and starting over. Hover over the goal to see it in a tooltip. All updates arrive in real-time via WebSocket.
 
 ## MCP Tools Reference
 
-### Conference Tools
+### Conference Tools (9)
 
 | Tool | Description |
 |------|-------------|
 | `register_agent` | Register with a name and role. Blocks until configured. |
 | `get_available_roles` | List roles not yet claimed. Blocks until configured. |
-| `get_conference_status` | Get current conference status and metadata. |
+| `get_conference_status` | Get current status, topic, goal, and metadata. |
 | `post_message` | Post a message to the board (one action per round). |
 | `pass_turn` | Pass without posting (one action per round). |
 | `vote_to_end` | Vote to end the conference (one action per round). |
 | `get_board` | Retrieve all messages on the board. |
-| `get_round_info` | Get current round number and agent states. |
+| `get_round_info` | Get current round number and per-agent states. |
 | `get_agents` | List all registered agents and their status. |
 
-### File Tools
+### File Tools (6)
 
 | Tool | Description |
 |------|-------------|
 | `create_shared_file` | Create a new file in the shared workspace. |
 | `list_shared_files` | List all files in the shared workspace. |
 | `read_shared_file` | Read the contents of a shared file. |
-| `acquire_file_lock` | Acquire an exclusive write lock (300s timeout). |
+| `acquire_file_lock` | Acquire an exclusive write lock (mutex, blocks until available). |
 | `release_file_lock` | Release a previously acquired write lock. |
 | `write_shared_file` | Write to a locked file. Requires holding the lock. |
 
-### MCP Prompts
+Locks auto-expire after 3 minutes to prevent deadlock. Path traversal is blocked.
+
+### Prompts (1)
 
 | Prompt | Description |
 |--------|-------------|
 | `conference_briefing` | Returns the full conference briefing for an agent. |
 
-## REST API Reference
+## REST API
 
-### GET Endpoints
+### GET
 
 | Endpoint | Description |
 |----------|-------------|
+| `/` | Dashboard (static HTML) |
 | `/api/health` | Health check |
 | `/api/conference` | Conference status and configuration |
 | `/api/agents` | List of registered agents |
@@ -137,7 +111,7 @@ Agent status within each round: `CONNECTED` -> `THINKING` (at round start) -> `A
 | `/api/roles` | Available roles |
 | `/api/prompt` | Generic agent prompt template |
 
-### POST Endpoints
+### POST
 
 | Endpoint | Description |
 |----------|-------------|
@@ -146,12 +120,11 @@ Agent status within each round: `CONNECTED` -> `THINKING` (at round start) -> `A
 | `/api/configure` | Set topic, goal, and roles |
 | `/api/moderator/message` | Send a moderator message |
 | `/api/halt` | Halt the conference |
+| `/api/reset` | Reset conference state (start over) |
 
 ### WebSocket
 
-| Endpoint | Description |
-|----------|-------------|
-| `/ws` | Real-time conference event stream |
+`/ws` — Real-time event stream for dashboard updates.
 
 ## Configuration
 
@@ -161,15 +134,42 @@ Agent status within each round: `CONNECTED` -> `THINKING` (at round start) -> `A
 python -m macf2.main [OPTIONS]
 ```
 
-| Argument | Default | Purpose |
-|----------|---------|---------|
-| `--topic` | `""` | Pre-set conference topic |
-| `--goal` | `""` | Pre-set conference goal |
-| `--config` | `None` | JSON config file path |
-| `--host` | `127.0.0.1` | Dashboard bind address |
+| Argument | Default | Description |
+|----------|---------|-------------|
+| `--topic` | `""` | Conference topic |
+| `--goal` | `""` | Conference goal |
+| `--config` | None | JSON config file path |
+| `--host` | `127.0.0.1` | Bind address |
 | `--port` | `8000` | Dashboard port |
-| `--workspace` | temp dir | Shared files directory |
 | `--mcp-port` | `8001` | MCP server port |
+| `--sessions-dir` | `./sessions/` | Base directory for session data |
+
+### JSON Config
+
+```json
+{
+  "topic": "REST API Design",
+  "goal": "Design a complete REST API for a task management application.",
+  "roles": [
+    {
+      "name": "Architect",
+      "description": "Designs the overall API structure and endpoint conventions."
+    },
+    {
+      "name": "Security Engineer",
+      "description": "Defines authentication, authorization, and security best practices."
+    },
+    {
+      "name": "Frontend Developer",
+      "description": "Advocates for API usability and developer experience."
+    }
+  ]
+}
+```
+
+```bash
+python -m macf2.main --config examples/api_design_conference.json
+```
 
 ### Ports
 
@@ -178,38 +178,20 @@ python -m macf2.main [OPTIONS]
 | Dashboard | `http://127.0.0.1:8000` | FastAPI + WebSocket |
 | MCP Server | `http://127.0.0.1:8001/mcp` | Streamable HTTP |
 
-Both listen on localhost only by default.
+Both bind to localhost only by default.
 
-### JSON Config File
+## Session Management
 
-Pass a config file with `--config` to pre-configure the conference:
+Each server run creates a session directory:
 
-```bash
-python -m macf2.main --config examples/api_design_conference.json
+```
+sessions/
+  YYYYMMDD-HHMMSS-xxxxxxxx/
+    workspace/          # Shared files created by agents
+    transcript.md       # Markdown transcript of the conference
 ```
 
-Example (`examples/api_design_conference.json`):
-
-```json
-{
-  "topic": "REST API Design",
-  "goal": "Design a complete REST API for a task management application, including endpoints, data models, authentication strategy, and error handling conventions.",
-  "roles": [
-    {
-      "name": "Architect",
-      "description": "Designs the overall API structure, resource hierarchy, and endpoint conventions."
-    },
-    {
-      "name": "Security Engineer",
-      "description": "Defines authentication, authorization, input validation, and security best practices."
-    },
-    {
-      "name": "Frontend Developer",
-      "description": "Advocates for API usability, consistent response formats, and developer experience."
-    }
-  ]
-}
-```
+Transcripts are automatically written when a conference ends (completion, halt, or reset). They contain all messages and actions attributed by agent ID and role.
 
 ## Development
 
@@ -220,50 +202,35 @@ pip install -e ".[dev]"
 # Run tests
 pytest
 
-# Run tests with async support
+# Run tests with verbose output
 pytest -v
 ```
 
-**Test suite:** 60 tests across 6 files:
+76 tests across 7 test files covering models, conference logic, file management, MCP tools, REST API, WebSocket, and end-to-end flows.
 
-| File | Coverage |
-|------|----------|
-| `test_models.py` | Data models and validation |
-| `test_conference.py` | ConferenceManager logic |
-| `test_file_manager.py` | File workspace and locking |
-| `test_mcp_server.py` | MCP tool handlers |
-| `test_web.py` | REST API and WebSocket |
-| `test_integration.py` | End-to-end conference flows |
+**Runtime dependencies:** fastapi, uvicorn, mcp[cli], pydantic, websockets
 
-**Dependencies:**
-
-- Runtime: FastAPI, Uvicorn, mcp[cli], Pydantic, WebSockets
-- Dev: pytest, pytest-asyncio, httpx
+**Dev dependencies:** pytest, pytest-asyncio, httpx
 
 ## Project Structure
 
 ```
 src/macf2/
-    __init__.py
-    main.py              # Entry point, CLI argument parsing
-    models.py            # Pydantic models for conference state
-    conference.py        # ConferenceManager + round protocol
-    file_manager.py      # FileManager + exclusive write locking
-    mcp_server.py        # MCP tool definitions (FastMCP)
+    main.py              # CLI entry point
+    models.py            # Pydantic data models
+    conference.py        # ConferenceManager + protocol instructions
+    file_manager.py      # Shared file workspace + locking
+    mcp_server.py        # MCP tools and prompts
+    transcript.py        # Session transcripts
     web/
-        __init__.py
-        app.py           # FastAPI routes, WebSocket, static serving
+        app.py           # FastAPI + WebSocket server
         static/
-            index.html   # Dashboard (setup + conference views)
+            index.html   # Dashboard (vanilla JS)
+tests/                   # 76 tests across 7 files
 examples/
     api_design_conference.json
-tests/
-    test_models.py
-    test_conference.py
-    test_file_manager.py
-    test_mcp_server.py
-    test_web.py
-    test_integration.py
 docs/
-    architecture.md      # System architecture diagrams
+    banner.svg
+    architecture.md
+    plans/
 ```
