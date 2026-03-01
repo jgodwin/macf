@@ -165,10 +165,13 @@ def create_app(
             await websocket.send_text(json.dumps({
                 "event": "initial_state",
                 "topic": conference.state.topic,
+                "goal": conference.state.goal,
                 "status": conference.state.status.value,
                 "agents": conference.get_agents_info(),
                 "messages": conference.get_board(),
                 "current_round": conference.state.current_round,
+                "is_configured": conference.is_configured,
+                "roles": [{"name": r.name, "description": r.description, "instructions": r.instructions} for r in conference._roles],
             }, default=str))
             while True:
                 data = await websocket.receive_text()

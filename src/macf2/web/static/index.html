@@ -25,6 +25,143 @@
     .status-completed { background: #1e40af; color: #bfdbfe; }
     .status-halted { background: #991b1b; color: #fecaca; }
 
+    .connection-status {
+      font-size: 12px; display: flex; align-items: center; gap: 6px;
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+    }
+    .dot-connected { background: #22c55e; }
+    .dot-disconnected { background: #ef4444; }
+
+    .view-hidden { display: none !important; }
+
+    /* ===== Setup View ===== */
+    .setup-view {
+      flex: 1; overflow-y: auto; padding: 32px;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .setup-container {
+      width: 100%; max-width: 720px;
+    }
+    .setup-container h2 {
+      font-size: 24px; margin-bottom: 24px; color: #f1f5f9;
+    }
+    .setup-section {
+      background: #1e293b; border-radius: 8px; padding: 20px;
+      margin-bottom: 20px; border: 1px solid #334155;
+    }
+    .setup-section h3 {
+      font-size: 14px; text-transform: uppercase; color: #94a3b8;
+      margin-bottom: 12px; letter-spacing: 0.5px;
+    }
+    .form-group { margin-bottom: 16px; }
+    .form-group:last-child { margin-bottom: 0; }
+    .form-group label {
+      display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .form-group input, .form-group textarea {
+      width: 100%; background: #0f172a; border: 1px solid #334155;
+      border-radius: 8px; padding: 10px 14px; color: #e2e8f0;
+      font-size: 14px; outline: none; font-family: inherit;
+    }
+    .form-group input:focus, .form-group textarea:focus {
+      border-color: #3b82f6;
+    }
+    .form-group textarea { resize: vertical; min-height: 60px; }
+
+    /* Roles */
+    .role-card {
+      background: #334155; border-radius: 8px; padding: 12px 16px;
+      margin-bottom: 8px; display: flex; justify-content: space-between;
+      align-items: flex-start;
+    }
+    .role-card .role-info { flex: 1; }
+    .role-card .role-name { font-weight: 600; color: #f1f5f9; font-size: 14px; }
+    .role-card .role-desc { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+    .role-card .role-instr { font-size: 11px; color: #64748b; margin-top: 4px; font-style: italic; }
+    .btn-remove {
+      background: none; border: none; color: #ef4444; cursor: pointer;
+      font-size: 18px; padding: 0 4px; line-height: 1; margin-left: 12px;
+    }
+    .btn-remove:hover { color: #f87171; }
+
+    .add-role-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+      margin-bottom: 8px;
+    }
+    .add-role-instructions {
+      grid-column: 1 / -1;
+    }
+    .add-role-instructions textarea {
+      width: 100%; background: #0f172a; border: 1px solid #334155;
+      border-radius: 8px; padding: 10px 14px; color: #e2e8f0;
+      font-size: 13px; outline: none; font-family: inherit;
+      resize: vertical; min-height: 40px;
+    }
+    .add-role-row input {
+      background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+      padding: 8px 12px; color: #e2e8f0; font-size: 13px; outline: none;
+    }
+    .add-role-row input:focus { border-color: #3b82f6; }
+
+    .btn-add {
+      background: #334155; border: 1px solid #475569; border-radius: 8px;
+      padding: 8px 16px; color: #e2e8f0; cursor: pointer; font-size: 13px;
+      font-weight: 600;
+    }
+    .btn-add:hover { background: #475569; }
+
+    /* Prompt box */
+    .prompt-box {
+      position: relative;
+    }
+    .prompt-box pre {
+      background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+      padding: 16px; font-size: 12px; line-height: 1.5;
+      color: #94a3b8; overflow-x: auto; white-space: pre-wrap;
+      word-wrap: break-word; max-height: 300px; overflow-y: auto;
+      font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, monospace;
+    }
+    .btn-copy {
+      position: absolute; top: 8px; right: 8px;
+      background: #334155; border: 1px solid #475569; border-radius: 6px;
+      padding: 6px 12px; color: #e2e8f0; cursor: pointer; font-size: 12px;
+      font-weight: 600;
+    }
+    .btn-copy:hover { background: #475569; }
+    .btn-copy.copied { background: #166534; border-color: #22c55e; }
+
+    /* MCP config snippet */
+    .mcp-config pre {
+      background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+      padding: 16px; font-size: 12px; line-height: 1.5;
+      color: #94a3b8; overflow-x: auto;
+      font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, monospace;
+    }
+
+    /* Start button */
+    .btn-start {
+      width: 100%; padding: 14px; background: #3b82f6; border: none;
+      border-radius: 8px; color: white; font-size: 16px; font-weight: 700;
+      cursor: pointer; margin-top: 4px;
+    }
+    .btn-start:hover:not(:disabled) { background: #2563eb; }
+    .btn-start:disabled {
+      background: #334155; color: #64748b; cursor: not-allowed;
+    }
+    .start-hint {
+      text-align: center; font-size: 12px; color: #64748b; margin-top: 8px;
+    }
+
+    .save-status {
+      font-size: 12px; color: #22c55e; margin-left: 12px;
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .save-status.visible { opacity: 1; }
+
+    /* ===== Conference View ===== */
     .main { display: flex; flex: 1; overflow: hidden; }
 
     .sidebar {
@@ -94,15 +231,6 @@
     .btn-send:hover { background: #2563eb; }
     .btn-halt { background: #dc2626; color: white; }
     .btn-halt:hover { background: #b91c1c; }
-
-    .connection-status {
-      font-size: 12px; display: flex; align-items: center; gap: 6px;
-    }
-    .dot {
-      width: 8px; height: 8px; border-radius: 50%; display: inline-block;
-    }
-    .dot-connected { background: #22c55e; }
-    .dot-disconnected { background: #ef4444; }
   </style>
 </head>
 <body>
@@ -120,7 +248,78 @@
     </div>
   </header>
 
-  <div class="main">
+  <!-- ===== Setup View ===== -->
+  <div id="setupView" class="setup-view">
+    <div class="setup-container">
+      <h2>Conference Setup</h2>
+
+      <!-- Topic & Goal -->
+      <div class="setup-section">
+        <h3>Conference Details</h3>
+        <div class="form-group">
+          <label for="setupTopic">Topic</label>
+          <input type="text" id="setupTopic" placeholder="e.g. Design a REST API for task management" />
+        </div>
+        <div class="form-group">
+          <label for="setupGoal">Goal</label>
+          <textarea id="setupGoal" placeholder="e.g. Produce a complete OpenAPI specification..." rows="3"></textarea>
+        </div>
+        <button class="btn-add" id="btnSaveConfig">Save Configuration</button>
+        <span class="save-status" id="saveStatus">Saved</span>
+      </div>
+
+      <!-- Roles -->
+      <div class="setup-section">
+        <h3>Roles</h3>
+        <div id="rolesList"></div>
+        <div class="add-role-row">
+          <input type="text" id="newRoleName" placeholder="Role name (e.g. Architect)" />
+          <input type="text" id="newRoleDesc" placeholder="Description (e.g. designs systems)" />
+        </div>
+        <div class="add-role-instructions">
+          <textarea id="newRoleInstr" placeholder="Instructions (optional, e.g. Focus on high-level API design...)" rows="2"></textarea>
+        </div>
+        <button class="btn-add" id="btnAddRole" style="margin-top:8px">Add Role</button>
+      </div>
+
+      <!-- Agent Prompt -->
+      <div class="setup-section">
+        <h3>Agent Prompt</h3>
+        <p style="font-size:13px; color:#94a3b8; margin-bottom:12px;">
+          Copy this prompt and paste it into any agent (Claude Code, Codex, etc.) to have it join the conference.
+        </p>
+        <div class="prompt-box">
+          <button class="btn-copy" id="btnCopyPrompt">Copy</button>
+          <pre id="promptText">Loading...</pre>
+        </div>
+      </div>
+
+      <!-- MCP Config -->
+      <div class="setup-section">
+        <h3>MCP Server Config (for claude_desktop_config.json)</h3>
+        <p style="font-size:13px; color:#94a3b8; margin-bottom:12px;">
+          Add this to your MCP client config to connect to the conference server.
+        </p>
+        <div class="mcp-config prompt-box">
+          <button class="btn-copy" id="btnCopyMcp">Copy</button>
+          <pre id="mcpConfigText">Loading...</pre>
+        </div>
+      </div>
+
+      <!-- Connected Agents -->
+      <div class="setup-section">
+        <h3>Connected Agents <span id="agentCountBadge" style="font-size:12px; color:#64748b; text-transform:none;">(0)</span></h3>
+        <div id="setupAgentList"></div>
+      </div>
+
+      <!-- Start -->
+      <button class="btn-start" id="btnStart" disabled>Start Conference</button>
+      <div class="start-hint" id="startHint">Configure a topic and wait for at least 2 agents to connect.</div>
+    </div>
+  </div>
+
+  <!-- ===== Conference View ===== -->
+  <div id="conferenceView" class="main view-hidden">
     <div class="sidebar">
       <h2>Agents</h2>
       <div id="agentList"></div>
@@ -129,8 +328,8 @@
       <div class="messages" id="messages"></div>
       <div class="controls">
         <input type="text" id="modInput" placeholder="Send moderator message..." />
-        <button class="btn-send" onclick="sendModMessage()">Send</button>
-        <button class="btn-halt" onclick="haltConference()">Halt</button>
+        <button class="btn-send" id="btnSendMod">Send</button>
+        <button class="btn-halt" id="btnHalt">Halt</button>
       </div>
     </div>
   </div>
@@ -138,38 +337,89 @@
   <script>
     let ws = null;
     let currentRound = 0;
+    let roles = [];
+    let connectedAgentCount = 0;
+    let isConfigured = false;
+    let mcpUrl = "";
 
+    // --- Safe DOM helpers ---
+    function el(tag, attrs, children) {
+      const node = document.createElement(tag);
+      if (attrs) {
+        for (const [k, v] of Object.entries(attrs)) {
+          if (k === "className") node.className = v;
+          else if (k === "textContent") node.textContent = v;
+          else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+          else node.setAttribute(k, v);
+        }
+      }
+      if (children) {
+        for (const child of children) {
+          if (typeof child === "string") node.appendChild(document.createTextNode(child));
+          else if (child) node.appendChild(child);
+        }
+      }
+      return node;
+    }
+
+    function clearChildren(node) {
+      while (node.firstChild) node.removeChild(node.firstChild);
+    }
+
+    // --- WebSocket ---
     function connect() {
       const proto = location.protocol === "https:" ? "wss:" : "ws:";
-      ws = new WebSocket(`${proto}//${location.host}/ws`);
+      ws = new WebSocket(proto + "//" + location.host + "/ws");
 
-      ws.onopen = () => {
+      ws.onopen = function() {
         document.getElementById("connDot").className = "dot dot-connected";
         document.getElementById("connText").textContent = "Connected";
       };
 
-      ws.onclose = () => {
+      ws.onclose = function() {
         document.getElementById("connDot").className = "dot dot-disconnected";
         document.getElementById("connText").textContent = "Reconnecting...";
         setTimeout(connect, 2000);
       };
 
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        handleEvent(data);
+      ws.onmessage = function(event) {
+        handleEvent(JSON.parse(event.data));
       };
     }
 
     function handleEvent(data) {
-      const event = data.event;
+      var event = data.event;
 
       if (event === "initial_state") {
-        document.getElementById("topic").textContent = data.topic;
+        document.getElementById("topic").textContent = data.topic || "MACF2 Conference";
         updateStatus(data.status);
         updateRound(data.current_round);
+        isConfigured = data.is_configured || false;
+
+        if (data.topic) document.getElementById("setupTopic").value = data.topic;
+        if (data.goal) document.getElementById("setupGoal").value = data.goal;
+        if (data.roles && data.roles.length > 0) {
+          roles = data.roles.map(function(r) {
+            return { name: r.name, description: r.description, instructions: r.instructions || "" };
+          });
+          renderRoles();
+        }
+
         renderAgents(data.agents);
         renderAllMessages(data.messages);
+        switchView(data.status);
+        loadPrompt();
         return;
+      }
+
+      if (event === "conference_configured") {
+        isConfigured = true;
+        if (data.topic) {
+          document.getElementById("setupTopic").value = data.topic;
+          document.getElementById("topic").textContent = data.topic;
+        }
+        loadPrompt();
+        updateStartButton();
       }
 
       if (event === "agent_joined" || event === "agent_left" ||
@@ -191,23 +441,20 @@
       }
 
       if (event === "agent_acted" && data.action_type === "pass") {
-        const el = document.createElement("div");
-        el.className = "pass-notice";
-        el.textContent = "Agent passed this round";
-        document.getElementById("messages").appendChild(el);
+        var notice = el("div", { className: "pass-notice", textContent: "Agent passed this round" });
+        document.getElementById("messages").appendChild(notice);
         scrollMessages();
       }
 
       if (event === "agent_acted" && data.action_type === "vote_to_end") {
-        const el = document.createElement("div");
-        el.className = "vote-notice";
-        el.textContent = "An agent voted to end the conference";
-        document.getElementById("messages").appendChild(el);
+        var voteNotice = el("div", { className: "vote-notice", textContent: "An agent voted to end the conference" });
+        document.getElementById("messages").appendChild(voteNotice);
         scrollMessages();
       }
 
       if (event === "conference_started") {
         updateStatus("active");
+        switchView("active");
       }
       if (event === "conference_ended") {
         updateStatus("completed");
@@ -217,8 +464,20 @@
       }
     }
 
+    function switchView(status) {
+      var setup = document.getElementById("setupView");
+      var conf = document.getElementById("conferenceView");
+      if (status === "waiting") {
+        setup.classList.remove("view-hidden");
+        conf.classList.add("view-hidden");
+      } else {
+        setup.classList.add("view-hidden");
+        conf.classList.remove("view-hidden");
+      }
+    }
+
     function updateStatus(status) {
-      const badge = document.getElementById("statusBadge");
+      var badge = document.getElementById("statusBadge");
       badge.textContent = status;
       badge.className = "status-badge status-" + status;
     }
@@ -228,69 +487,226 @@
       document.getElementById("roundBadge").textContent = "Round: " + (num || "-");
     }
 
-    function renderAgents(agents) {
-      const container = document.getElementById("agentList");
-      container.innerHTML = agents.map(a =>
-        '<div class="agent-card">' +
-          '<div class="name">' + escapeHtml(a.name) + '</div>' +
-          (a.role ? '<div class="role">' + escapeHtml(a.role) + '</div>' : '') +
-          '<span class="agent-status agent-status-' + a.status + '">' + a.status + '</span>' +
-        '</div>'
-      ).join("");
+    // --- Setup: Save config ---
+    async function saveConfig() {
+      var topic = document.getElementById("setupTopic").value.trim();
+      var goal = document.getElementById("setupGoal").value.trim();
+      if (!topic) { alert("Topic is required."); return; }
+      try {
+        var resp = await fetch("/api/configure", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topic: topic, goal: goal, roles: roles }),
+        });
+        if (!resp.ok) {
+          var err = await resp.json().catch(function() { return {}; });
+          alert("Error: " + (err.detail || resp.statusText));
+          return;
+        }
+        document.getElementById("topic").textContent = topic;
+        isConfigured = true;
+        var saveStatus = document.getElementById("saveStatus");
+        saveStatus.classList.add("visible");
+        setTimeout(function() { saveStatus.classList.remove("visible"); }, 2000);
+        loadPrompt();
+        updateStartButton();
+      } catch (e) {
+        alert("Failed to save: " + e.message);
+      }
     }
 
+    // --- Setup: Roles ---
+    function renderRoles() {
+      var container = document.getElementById("rolesList");
+      clearChildren(container);
+      if (roles.length === 0) {
+        container.appendChild(
+          el("p", { style: "font-size:13px; color:#64748b; font-style:italic; margin-bottom:8px;",
+                    textContent: "No roles defined. Agents will choose their own names." })
+        );
+        return;
+      }
+      roles.forEach(function(r, i) {
+        var infoDiv = el("div", { className: "role-info" }, [
+          el("div", { className: "role-name", textContent: r.name }),
+          el("div", { className: "role-desc", textContent: r.description }),
+        ]);
+        if (r.instructions) {
+          infoDiv.appendChild(el("div", { className: "role-instr", textContent: r.instructions }));
+        }
+        var removeBtn = el("button", {
+          className: "btn-remove", textContent: "\u00d7", title: "Remove",
+          onclick: function() { removeRole(i); }
+        });
+        container.appendChild(el("div", { className: "role-card" }, [infoDiv, removeBtn]));
+      });
+    }
+
+    function addRole() {
+      var name = document.getElementById("newRoleName").value.trim();
+      var desc = document.getElementById("newRoleDesc").value.trim();
+      var instr = document.getElementById("newRoleInstr").value.trim();
+      if (!name) { alert("Role name is required."); return; }
+      if (!desc) { alert("Role description is required."); return; }
+      roles.push({ name: name, description: desc, instructions: instr });
+      document.getElementById("newRoleName").value = "";
+      document.getElementById("newRoleDesc").value = "";
+      document.getElementById("newRoleInstr").value = "";
+      renderRoles();
+    }
+
+    function removeRole(index) {
+      roles.splice(index, 1);
+      renderRoles();
+    }
+
+    // --- Setup: Agent prompt ---
+    async function loadPrompt() {
+      try {
+        var resp = await fetch("/api/prompt");
+        var data = await resp.json();
+        document.getElementById("promptText").textContent = data.prompt;
+        mcpUrl = data.mcp_url;
+        document.getElementById("mcpConfigText").textContent = JSON.stringify({
+          "mcpServers": {
+            "macf2-conference": {
+              "url": mcpUrl
+            }
+          }
+        }, null, 2);
+      } catch (e) { /* ignore */ }
+    }
+
+    function copyToClipboard(text, btnId) {
+      navigator.clipboard.writeText(text).then(function() {
+        var btn = document.getElementById(btnId);
+        btn.textContent = "Copied!";
+        btn.classList.add("copied");
+        setTimeout(function() {
+          btn.textContent = "Copy";
+          btn.classList.remove("copied");
+        }, 2000);
+      });
+    }
+
+    // --- Setup: Start conference ---
+    function updateStartButton() {
+      var btn = document.getElementById("btnStart");
+      var hint = document.getElementById("startHint");
+      var topicSet = document.getElementById("setupTopic").value.trim().length > 0;
+      var canStart = isConfigured && connectedAgentCount >= 2;
+      btn.disabled = !canStart;
+      if (!topicSet) {
+        hint.textContent = "Set a topic and save the configuration first.";
+      } else if (!isConfigured) {
+        hint.textContent = "Save the configuration first.";
+      } else if (connectedAgentCount < 2) {
+        hint.textContent = "Waiting for at least 2 agents to connect... (" + connectedAgentCount + " connected)";
+      } else {
+        hint.textContent = connectedAgentCount + " agents connected. Ready to start!";
+      }
+    }
+
+    async function startConference() {
+      try {
+        var resp = await fetch("/api/start", { method: "POST" });
+        if (!resp.ok) {
+          var err = await resp.json().catch(function() { return {}; });
+          alert("Error: " + (err.detail || resp.statusText));
+        }
+      } catch (e) {
+        alert("Failed to start: " + e.message);
+      }
+    }
+
+    // --- Agents rendering (safe DOM) ---
+    function buildAgentCard(a) {
+      var card = el("div", { className: "agent-card" }, [
+        el("div", { className: "name", textContent: a.name }),
+      ]);
+      if (a.role) {
+        card.appendChild(el("div", { className: "role", textContent: a.role }));
+      }
+      card.appendChild(el("span", { className: "agent-status agent-status-" + a.status, textContent: a.status }));
+      return card;
+    }
+
+    function renderAgents(agents) {
+      // Conference view agent list
+      var container = document.getElementById("agentList");
+      clearChildren(container);
+      agents.forEach(function(a) {
+        container.appendChild(buildAgentCard(a));
+      });
+
+      // Setup view agent list
+      var activeAgents = agents.filter(function(a) { return a.status !== "disconnected"; });
+      connectedAgentCount = activeAgents.length;
+      document.getElementById("agentCountBadge").textContent = "(" + connectedAgentCount + ")";
+
+      var setupList = document.getElementById("setupAgentList");
+      clearChildren(setupList);
+      if (activeAgents.length === 0) {
+        setupList.appendChild(
+          el("p", { style: "font-size:13px; color:#64748b; font-style:italic;",
+                    textContent: "No agents connected yet. Share the prompt above to get agents to join." })
+        );
+      } else {
+        activeAgents.forEach(function(a) {
+          setupList.appendChild(buildAgentCard(a));
+        });
+      }
+      updateStartButton();
+    }
+
+    // --- Conference view: Messages (safe DOM) ---
     function renderAllMessages(messages) {
-      const container = document.getElementById("messages");
-      container.innerHTML = "";
-      let lastRound = 0;
-      for (const m of messages) {
+      var container = document.getElementById("messages");
+      clearChildren(container);
+      var lastRound = 0;
+      messages.forEach(function(m) {
         if (m.round_number !== lastRound) {
           lastRound = m.round_number;
           addRoundSeparator(lastRound);
         }
-        addMessage(
-          m.agent_name, m.content, m.round_number,
-          m.agent_id === "moderator"
-        );
-      }
+        addMessage(m.agent_name, m.content, m.round_number, m.agent_id === "moderator");
+      });
     }
 
     function addRoundSeparator(roundNum) {
-      const el = document.createElement("div");
-      el.className = "round-header";
-      el.textContent = "Round " + roundNum;
-      document.getElementById("messages").appendChild(el);
+      document.getElementById("messages").appendChild(
+        el("div", { className: "round-header", textContent: "Round " + roundNum })
+      );
     }
 
     function addMessage(author, content, round, isModerator) {
-      const el = document.createElement("div");
-      el.className = "message" + (isModerator ? " moderator" : "");
-      el.innerHTML =
-        '<div class="msg-header">' +
-          '<span class="msg-author">' + escapeHtml(author) + '</span>' +
-          '<span class="msg-time">Round ' + round + '</span>' +
-        '</div>' +
-        '<div class="msg-body">' + escapeHtml(content) + '</div>';
-      document.getElementById("messages").appendChild(el);
+      var msgEl = el("div", { className: "message" + (isModerator ? " moderator" : "") }, [
+        el("div", { className: "msg-header" }, [
+          el("span", { className: "msg-author", textContent: author }),
+          el("span", { className: "msg-time", textContent: "Round " + round }),
+        ]),
+        el("div", { className: "msg-body", textContent: content }),
+      ]);
+      document.getElementById("messages").appendChild(msgEl);
       scrollMessages();
     }
 
     function scrollMessages() {
-      const el = document.getElementById("messages");
-      el.scrollTop = el.scrollHeight;
+      var msgEl = document.getElementById("messages");
+      msgEl.scrollTop = msgEl.scrollHeight;
     }
 
     async function fetchAgents() {
       try {
-        const resp = await fetch("/api/agents");
-        const agents = await resp.json();
+        var resp = await fetch("/api/agents");
+        var agents = await resp.json();
         renderAgents(agents);
       } catch (e) { /* ignore */ }
     }
 
     function sendModMessage() {
-      const input = document.getElementById("modInput");
-      const content = input.value.trim();
+      var input = document.getElementById("modInput");
+      var content = input.value.trim();
       if (!content || !ws) return;
       ws.send(JSON.stringify({ type: "moderator_message", content: content }));
       input.value = "";
@@ -301,16 +717,24 @@
       if (ws) ws.send(JSON.stringify({ type: "halt", reason: "Halted by moderator" }));
     }
 
-    function escapeHtml(text) {
-      const div = document.createElement("div");
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
+    // --- Event listeners ---
+    document.getElementById("btnSaveConfig").addEventListener("click", saveConfig);
+    document.getElementById("btnAddRole").addEventListener("click", addRole);
+    document.getElementById("btnCopyPrompt").addEventListener("click", function() {
+      copyToClipboard(document.getElementById("promptText").textContent, "btnCopyPrompt");
+    });
+    document.getElementById("btnCopyMcp").addEventListener("click", function() {
+      copyToClipboard(document.getElementById("mcpConfigText").textContent, "btnCopyMcp");
+    });
+    document.getElementById("btnStart").addEventListener("click", startConference);
+    document.getElementById("btnSendMod").addEventListener("click", sendModMessage);
+    document.getElementById("btnHalt").addEventListener("click", function() { haltConference(); });
     document.getElementById("modInput").addEventListener("keydown", function(e) {
       if (e.key === "Enter") sendModMessage();
     });
 
+    // Initialize
+    renderRoles();
     connect();
   </script>
 </body>
