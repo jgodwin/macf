@@ -42,11 +42,13 @@ def create_mcp_server(
     _session_agents: dict[str, str] = {}  # client_id -> agent_id
 
     @mcp.tool()
-    def register_agent(name: str, role: str = "") -> str:
+    async def register_agent(name: str, role: str = "") -> str:
         """Register yourself as a conference participant. Returns your agent_id
         and a full briefing with the topic, goal, your role, other participants,
         and the round protocol. You must call this before any other action.
-        Call get_available_roles first to see which roles are open."""
+        Call get_available_roles first to see which roles are open.
+        This will block until the conference has been configured by the moderator."""
+        await conference.wait_for_configuration()
         agent_id = conference.register_agent(name, role=role)
         briefing = conference.get_briefing(agent_id)
         return json.dumps({
@@ -56,9 +58,11 @@ def create_mcp_server(
         })
 
     @mcp.tool()
-    def get_available_roles() -> str:
+    async def get_available_roles() -> str:
         """List pre-defined roles that haven't been claimed yet.
-        Call this before register_agent to see which roles you can take."""
+        Call this before register_agent to see which roles you can take.
+        This will block until the conference has been configured by the moderator."""
+        await conference.wait_for_configuration()
         return json.dumps(conference.get_available_roles())
 
     @mcp.tool()

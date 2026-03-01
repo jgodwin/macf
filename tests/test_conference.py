@@ -205,3 +205,36 @@ def test_configure_fails_after_start():
     conf.start()
     with pytest.raises(ValueError, match="Cannot reconfigure"):
         conf.configure(topic="New topic")
+
+
+def test_is_configured_flag():
+    conf = ConferenceManager()
+    assert conf.is_configured is False
+    conf.configure(topic="Test")
+    assert conf.is_configured is True
+
+
+def test_is_configured_when_topic_at_init():
+    conf = ConferenceManager(topic="Already set")
+    assert conf.is_configured is True
+
+
+@pytest.mark.asyncio
+async def test_wait_for_configuration_blocks_then_resolves():
+    import asyncio
+    conf = ConferenceManager()
+    resolved = False
+
+    async def waiter():
+        nonlocal resolved
+        await conf.wait_for_configuration()
+        resolved = True
+
+    task = asyncio.create_task(waiter())
+    await asyncio.sleep(0.05)
+    assert resolved is False  # Still blocking
+
+    conf.configure(topic="Now configured")
+    await asyncio.sleep(0.05)
+    assert resolved is True  # Unblocked
+    await task

@@ -48,6 +48,17 @@ class ConferenceManager:
         self.state = ConferenceState(topic=topic, goal=goal)
         self._roles = roles or []
         self._event_listeners: list[Callable[[str, dict], Coroutine]] = []
+        self._configured = asyncio.Event()
+        if topic:  # Already configured at construction time
+            self._configured.set()
+
+    async def wait_for_configuration(self) -> None:
+        """Block until the conference has been configured with a topic."""
+        await self._configured.wait()
+
+    @property
+    def is_configured(self) -> bool:
+        return self._configured.is_set()
 
     def on_event(self, callback: Callable[[str, dict], Coroutine]) -> None:
         self._event_listeners.append(callback)
@@ -59,6 +70,7 @@ class ConferenceManager:
         self.state.topic = topic
         self.state.goal = goal
         self._roles = roles or []
+        self._configured.set()
         self._emit("conference_configured", {
             "topic": topic, "goal": goal,
             "roles": [{"name": r.name, "description": r.description} for r in self._roles],
