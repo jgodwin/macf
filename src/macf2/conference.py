@@ -159,23 +159,24 @@ class ConferenceManager:
 
     def post_message(self, agent_id: str, content: str) -> bool:
         agent = self.state.agents[agent_id]
+        round_number = self.state.current_round
         msg = Message(
             agent_id=agent_id,
             agent_name=agent.name,
-            round_number=self.state.current_round,
+            round_number=round_number,
             content=content,
         )
         self.state.messages.append(msg)
-        self._record_action(
-            agent_id,
-            RoundAction(agent_id=agent_id, type=ActionType.MESSAGE, content=content),
-        )
         self._emit("message_posted", {
             "agent_id": agent_id,
             "agent_name": agent.name,
             "content": content,
-            "round_number": self.state.current_round,
+            "round_number": round_number,
         })
+        self._record_action(
+            agent_id,
+            RoundAction(agent_id=agent_id, type=ActionType.MESSAGE, content=content),
+        )
         return True
 
     def pass_turn(self, agent_id: str) -> None:
