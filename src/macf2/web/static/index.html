@@ -1,2 +1,317 @@
 <!DOCTYPE html>
-<html><head><title>MACF2</title></head><body><h1>MACF2 Dashboard</h1></body></html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MACF2 - Conference Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f172a; color: #e2e8f0;
+      display: flex; flex-direction: column; height: 100vh;
+    }
+    header {
+      background: #1e293b; padding: 16px 24px;
+      border-bottom: 1px solid #334155;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    header h1 { font-size: 20px; color: #f1f5f9; }
+    .status-badge {
+      padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: 600;
+    }
+    .status-waiting { background: #854d0e; color: #fef3c7; }
+    .status-active { background: #166534; color: #bbf7d0; }
+    .status-completed { background: #1e40af; color: #bfdbfe; }
+    .status-halted { background: #991b1b; color: #fecaca; }
+
+    .main { display: flex; flex: 1; overflow: hidden; }
+
+    .sidebar {
+      width: 280px; background: #1e293b; padding: 16px;
+      border-right: 1px solid #334155; overflow-y: auto;
+    }
+    .sidebar h2 { font-size: 14px; text-transform: uppercase; color: #94a3b8; margin-bottom: 12px; }
+    .agent-card {
+      background: #334155; border-radius: 8px; padding: 12px; margin-bottom: 8px;
+    }
+    .agent-card .name { font-weight: 600; color: #f1f5f9; }
+    .agent-card .role { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+    .agent-card .agent-status {
+      display: inline-block; margin-top: 6px; padding: 2px 8px;
+      border-radius: 8px; font-size: 11px; font-weight: 600;
+    }
+    .agent-status-connected { background: #166534; color: #bbf7d0; }
+    .agent-status-thinking { background: #854d0e; color: #fef3c7; }
+    .agent-status-acted { background: #1e40af; color: #bfdbfe; }
+    .agent-status-disconnected { background: #991b1b; color: #fecaca; }
+
+    .board {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden;
+    }
+    .round-header {
+      background: #1e293b; padding: 8px 24px; font-size: 13px;
+      color: #94a3b8; border-bottom: 1px solid #334155; text-align: center;
+      font-weight: 600;
+    }
+    .messages {
+      flex: 1; overflow-y: auto; padding: 16px 24px;
+    }
+    .message {
+      background: #1e293b; border-radius: 8px; padding: 12px 16px;
+      margin-bottom: 12px; border-left: 3px solid #3b82f6;
+    }
+    .message.moderator { border-left-color: #f59e0b; background: #1c1917; }
+    .message .msg-header {
+      display: flex; justify-content: space-between; margin-bottom: 6px;
+    }
+    .message .msg-author { font-weight: 600; color: #60a5fa; font-size: 14px; }
+    .message.moderator .msg-author { color: #fbbf24; }
+    .message .msg-time { font-size: 12px; color: #64748b; }
+    .message .msg-body { font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+    .pass-notice, .vote-notice {
+      text-align: center; color: #64748b; font-size: 13px;
+      margin-bottom: 12px; font-style: italic;
+    }
+    .vote-notice { color: #f59e0b; }
+
+    .controls {
+      background: #1e293b; padding: 16px 24px;
+      border-top: 1px solid #334155;
+      display: flex; gap: 12px; align-items: center;
+    }
+    .controls input {
+      flex: 1; background: #0f172a; border: 1px solid #334155;
+      border-radius: 8px; padding: 10px 16px; color: #e2e8f0;
+      font-size: 14px; outline: none;
+    }
+    .controls input:focus { border-color: #3b82f6; }
+    .controls button {
+      padding: 10px 20px; border: none; border-radius: 8px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    .btn-send { background: #3b82f6; color: white; }
+    .btn-send:hover { background: #2563eb; }
+    .btn-halt { background: #dc2626; color: white; }
+    .btn-halt:hover { background: #b91c1c; }
+
+    .connection-status {
+      font-size: 12px; display: flex; align-items: center; gap: 6px;
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+    }
+    .dot-connected { background: #22c55e; }
+    .dot-disconnected { background: #ef4444; }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="topic">MACF2 Conference</h1>
+      <div class="connection-status" id="connStatus">
+        <span class="dot dot-disconnected" id="connDot"></span>
+        <span id="connText">Disconnected</span>
+      </div>
+    </div>
+    <div>
+      <span id="roundBadge" style="margin-right:12px; font-size:14px; color:#94a3b8;">Round: -</span>
+      <span class="status-badge status-waiting" id="statusBadge">waiting</span>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="sidebar">
+      <h2>Agents</h2>
+      <div id="agentList"></div>
+    </div>
+    <div class="board">
+      <div class="messages" id="messages"></div>
+      <div class="controls">
+        <input type="text" id="modInput" placeholder="Send moderator message..." />
+        <button class="btn-send" onclick="sendModMessage()">Send</button>
+        <button class="btn-halt" onclick="haltConference()">Halt</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let ws = null;
+    let currentRound = 0;
+
+    function connect() {
+      const proto = location.protocol === "https:" ? "wss:" : "ws:";
+      ws = new WebSocket(`${proto}//${location.host}/ws`);
+
+      ws.onopen = () => {
+        document.getElementById("connDot").className = "dot dot-connected";
+        document.getElementById("connText").textContent = "Connected";
+      };
+
+      ws.onclose = () => {
+        document.getElementById("connDot").className = "dot dot-disconnected";
+        document.getElementById("connText").textContent = "Reconnecting...";
+        setTimeout(connect, 2000);
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        handleEvent(data);
+      };
+    }
+
+    function handleEvent(data) {
+      const event = data.event;
+
+      if (event === "initial_state") {
+        document.getElementById("topic").textContent = data.topic;
+        updateStatus(data.status);
+        updateRound(data.current_round);
+        renderAgents(data.agents);
+        renderAllMessages(data.messages);
+        return;
+      }
+
+      if (event === "agent_joined" || event === "agent_left" ||
+          event === "agent_acted" || event === "round_started") {
+        fetchAgents();
+      }
+
+      if (event === "round_started") {
+        updateRound(data.round_number);
+        addRoundSeparator(data.round_number);
+      }
+
+      if (event === "message_posted") {
+        addMessage(data.agent_name, data.content, data.round_number, false);
+      }
+
+      if (event === "moderator_message") {
+        addMessage("Moderator", data.content, currentRound, true);
+      }
+
+      if (event === "agent_acted" && data.action_type === "pass") {
+        const el = document.createElement("div");
+        el.className = "pass-notice";
+        el.textContent = "Agent passed this round";
+        document.getElementById("messages").appendChild(el);
+        scrollMessages();
+      }
+
+      if (event === "agent_acted" && data.action_type === "vote_to_end") {
+        const el = document.createElement("div");
+        el.className = "vote-notice";
+        el.textContent = "An agent voted to end the conference";
+        document.getElementById("messages").appendChild(el);
+        scrollMessages();
+      }
+
+      if (event === "conference_started") {
+        updateStatus("active");
+      }
+      if (event === "conference_ended") {
+        updateStatus("completed");
+      }
+      if (event === "conference_halted") {
+        updateStatus("halted");
+      }
+    }
+
+    function updateStatus(status) {
+      const badge = document.getElementById("statusBadge");
+      badge.textContent = status;
+      badge.className = "status-badge status-" + status;
+    }
+
+    function updateRound(num) {
+      currentRound = num;
+      document.getElementById("roundBadge").textContent = "Round: " + (num || "-");
+    }
+
+    function renderAgents(agents) {
+      const container = document.getElementById("agentList");
+      container.innerHTML = agents.map(a =>
+        '<div class="agent-card">' +
+          '<div class="name">' + escapeHtml(a.name) + '</div>' +
+          (a.role ? '<div class="role">' + escapeHtml(a.role) + '</div>' : '') +
+          '<span class="agent-status agent-status-' + a.status + '">' + a.status + '</span>' +
+        '</div>'
+      ).join("");
+    }
+
+    function renderAllMessages(messages) {
+      const container = document.getElementById("messages");
+      container.innerHTML = "";
+      let lastRound = 0;
+      for (const m of messages) {
+        if (m.round_number !== lastRound) {
+          lastRound = m.round_number;
+          addRoundSeparator(lastRound);
+        }
+        addMessage(
+          m.agent_name, m.content, m.round_number,
+          m.agent_id === "moderator"
+        );
+      }
+    }
+
+    function addRoundSeparator(roundNum) {
+      const el = document.createElement("div");
+      el.className = "round-header";
+      el.textContent = "Round " + roundNum;
+      document.getElementById("messages").appendChild(el);
+    }
+
+    function addMessage(author, content, round, isModerator) {
+      const el = document.createElement("div");
+      el.className = "message" + (isModerator ? " moderator" : "");
+      el.innerHTML =
+        '<div class="msg-header">' +
+          '<span class="msg-author">' + escapeHtml(author) + '</span>' +
+          '<span class="msg-time">Round ' + round + '</span>' +
+        '</div>' +
+        '<div class="msg-body">' + escapeHtml(content) + '</div>';
+      document.getElementById("messages").appendChild(el);
+      scrollMessages();
+    }
+
+    function scrollMessages() {
+      const el = document.getElementById("messages");
+      el.scrollTop = el.scrollHeight;
+    }
+
+    async function fetchAgents() {
+      try {
+        const resp = await fetch("/api/agents");
+        const agents = await resp.json();
+        renderAgents(agents);
+      } catch (e) { /* ignore */ }
+    }
+
+    function sendModMessage() {
+      const input = document.getElementById("modInput");
+      const content = input.value.trim();
+      if (!content || !ws) return;
+      ws.send(JSON.stringify({ type: "moderator_message", content: content }));
+      input.value = "";
+    }
+
+    function haltConference() {
+      if (!confirm("Halt the conference?")) return;
+      if (ws) ws.send(JSON.stringify({ type: "halt", reason: "Halted by moderator" }));
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    document.getElementById("modInput").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") sendModMessage();
+    });
+
+    connect();
+  </script>
+</body>
+</html>
