@@ -225,10 +225,12 @@
     .message .msg-header {
       display: flex; justify-content: space-between; margin-bottom: 6px;
     }
-    .message .msg-author { font-weight: 600; color: #60a5fa; font-size: 14px; }
-    .message.moderator .msg-author { color: #fbbf24; }
+    .message .msg-author { font-weight: 600; font-size: 14px; }
     .message .msg-time { font-size: 12px; color: #64748b; }
-    .message .msg-body { font-size: 14px; line-height: 1.6; }
+    .message .msg-body {
+      font-size: 14px; line-height: 1.6;
+      max-height: 300px; overflow-y: auto;
+    }
     .pass-notice, .vote-notice {
       text-align: center; color: #64748b; font-size: 13px;
       margin-bottom: 12px; font-style: italic;
@@ -422,6 +424,29 @@
     let isConfigured = false;
     let mcpUrl = "";
     let conferenceGoal = "";
+
+    // --- Agent color system ---
+    var AGENT_COLORS = [
+      { border: "#3b82f6", text: "#60a5fa", bg: "#1e293b" },   // blue
+      { border: "#8b5cf6", text: "#a78bfa", bg: "#1e1b2e" },   // purple
+      { border: "#10b981", text: "#34d399", bg: "#1b2e28" },   // emerald
+      { border: "#f59e0b", text: "#fbbf24", bg: "#2a2518" },   // amber
+      { border: "#ec4899", text: "#f472b6", bg: "#2e1b27" },   // pink
+      { border: "#06b6d4", text: "#22d3ee", bg: "#1b2930" },   // cyan
+      { border: "#ef4444", text: "#f87171", bg: "#2e1b1b" },   // red
+      { border: "#84cc16", text: "#a3e635", bg: "#222e1b" },   // lime
+    ];
+    var _agentColorMap = {};
+    var _nextColorIndex = 0;
+
+    function getAgentColor(name) {
+      if (name === "Moderator") return { border: "#f59e0b", text: "#fbbf24", bg: "#1c1917" };
+      if (!_agentColorMap[name]) {
+        _agentColorMap[name] = AGENT_COLORS[_nextColorIndex % AGENT_COLORS.length];
+        _nextColorIndex++;
+      }
+      return _agentColorMap[name];
+    }
 
     // --- Safe DOM helpers ---
     function el(tag, attrs, children) {
@@ -717,9 +742,12 @@
 
     // --- Agents rendering (safe DOM) ---
     function buildAgentCard(a) {
-      var card = el("div", { className: "agent-card" }, [
-        el("div", { className: "name", textContent: a.name }),
-      ]);
+      var color = getAgentColor(a.name);
+      var card = el("div", { className: "agent-card" });
+      card.style.borderLeft = "3px solid " + color.border;
+      var nameEl = el("div", { className: "name", textContent: a.name });
+      nameEl.style.color = color.text;
+      card.appendChild(nameEl);
       if (a.role) {
         card.appendChild(el("div", { className: "role", textContent: a.role }));
       }
@@ -789,19 +817,26 @@
     }
 
     function addMessage(author, content, round, isModerator) {
+      var color = getAgentColor(author);
       var bodyDiv = el("div", { className: "msg-body" });
       if (typeof marked !== "undefined" && typeof DOMPurify !== "undefined") {
         bodyDiv.innerHTML = DOMPurify.sanitize(marked.parse(content));
       } else {
         bodyDiv.textContent = content;
       }
+      var authorEl = el("span", { className: "msg-author", textContent: author });
+      authorEl.style.color = color.text;
       var msgEl = el("div", { className: "message" + (isModerator ? " moderator" : "") }, [
         el("div", { className: "msg-header" }, [
-          el("span", { className: "msg-author", textContent: author }),
+          authorEl,
           el("span", { className: "msg-time", textContent: "Round " + round }),
         ]),
         bodyDiv,
       ]);
+      if (!isModerator) {
+        msgEl.style.borderLeftColor = color.border;
+        msgEl.style.background = color.bg;
+      }
       // Append to current round group's body, or fallback to messages container
       var target = _currentRoundGroup
         ? _currentRoundGroup.querySelector(".round-messages")
