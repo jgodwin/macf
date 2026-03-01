@@ -14,6 +14,12 @@ from macf2.file_manager import FileManager
 from macf2.mcp_server import create_mcp_server
 
 
+class ConfigureRequest(BaseModel):
+    topic: str
+    goal: str = ""
+    roles: list[dict] = []
+
+
 class RegisterRequest(BaseModel):
     name: str
     role: str = ""
@@ -61,6 +67,7 @@ def create_app(
 ) -> FastAPI:
     app = FastAPI(title="MACF2 Dashboard")
     ws_manager = ConnectionManager()
+    mcp_url = f"http://{mcp_host}:{mcp_port}/mcp"
 
     mcp_components = create_mcp_server(
         topic=topic, goal=goal, roles=roles,
@@ -87,9 +94,11 @@ def create_app(
     async def get_conference():
         return {
             "topic": conference.state.topic,
+            "goal": conference.state.goal,
             "status": conference.state.status.value,
             "current_round": conference.state.current_round,
             "agent_count": len(conference._active_agent_ids()),
+            "roles": [{"name": r.name, "description": r.description} for r in conference._roles],
         }
 
     @app.get("/api/agents")
@@ -129,6 +138,22 @@ def create_app(
     async def halt(req: HaltRequest):
         conference.halt(req.reason)
         return {"status": "halted"}
+
+    @app.post("/api/configure")
+    async def configure(req: ConfigureRequest):
+        from macf2.models import RoleConfig
+        role_configs = [RoleConfig(**r) for r in req.roles] if req.roles else None
+        conference.configure(topic=req.topic, goal=req.goal, roles=role_configs)
+        return {"status": "configured"}
+
+    @app.get("/api/roles")
+    async def get_roles():
+        return conference.get_available_roles()
+
+    @app.get("/api/prompt")
+    async def get_prompt():
+        from macf2.conference import generate_agent_prompt
+        return {"prompt": generate_agent_prompt(mcp_url), "mcp_url": mcp_url}
 
     # --- WebSocket for real-time updates ---
 

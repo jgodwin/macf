@@ -75,3 +75,44 @@ async def test_dashboard_serves_html(app):
         resp = await client.get("/")
         assert resp.status_code == 200
         assert "text/html" in resp.headers["content-type"]
+
+
+@pytest.mark.asyncio
+async def test_configure_conference(app):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.post("/api/configure", json={
+            "topic": "Design a CLI",
+            "goal": "Build a working tool",
+            "roles": [{"name": "Architect", "description": "designs systems", "instructions": "Focus on structure"}],
+        })
+        assert resp.status_code == 200
+        resp = await client.get("/api/conference")
+        data = resp.json()
+        assert data["topic"] == "Design a CLI"
+        assert data["goal"] == "Build a working tool"
+
+
+@pytest.mark.asyncio
+async def test_get_roles(app):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await client.post("/api/configure", json={
+            "topic": "Test",
+            "roles": [{"name": "A1", "description": "role1"}, {"name": "A2", "description": "role2"}],
+        })
+        resp = await client.get("/api/roles")
+        assert resp.status_code == 200
+        assert len(resp.json()) == 2
+
+
+@pytest.mark.asyncio
+async def test_get_agent_prompt(app):
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        resp = await client.get("/api/prompt")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "prompt" in data
+        assert "get_available_roles" in data["prompt"]
+        assert "mcp_url" in data
