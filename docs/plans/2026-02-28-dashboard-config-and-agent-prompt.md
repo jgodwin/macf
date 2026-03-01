@@ -44,7 +44,7 @@ def test_configure_fails_after_start():
 
 **Step 2: Run tests to verify they fail**
 
-Run: `cd . && .venv/bin/pytest tests/test_conference.py::test_configure_sets_topic_goal_roles tests/test_conference.py::test_configure_fails_after_start -v`
+Run: `.venv/bin/pytest tests/test_conference.py::test_configure_sets_topic_goal_roles tests/test_conference.py::test_configure_fails_after_start -v`
 Expected: FAIL (no `configure` method, `__init__` requires `topic`)
 
 **Step 3: Implement changes in conference.py**
@@ -119,7 +119,7 @@ MCP Server URL: {mcp_url}
 
 **Step 4: Run tests to verify they pass**
 
-Run: `cd . && .venv/bin/pytest tests/test_conference.py -v`
+Run: `.venv/bin/pytest tests/test_conference.py -v`
 Expected: All PASS (22 existing + 2 new = 24)
 
 **Step 5: Commit**
@@ -185,7 +185,7 @@ async def test_get_agent_prompt(app):
 
 **Step 2: Run tests to verify they fail**
 
-Run: `cd . && .venv/bin/pytest tests/test_web.py::test_configure_conference tests/test_web.py::test_get_roles tests/test_web.py::test_get_agent_prompt -v`
+Run: `.venv/bin/pytest tests/test_web.py::test_configure_conference tests/test_web.py::test_get_roles tests/test_web.py::test_get_agent_prompt -v`
 Expected: FAIL (endpoints don't exist)
 
 **Step 3: Implement in web/app.py**
@@ -252,7 +252,7 @@ Also update `GET /api/conference` to include `goal` and `roles`:
 
 **Step 4: Run tests**
 
-Run: `cd . && .venv/bin/pytest tests/test_web.py -v`
+Run: `.venv/bin/pytest tests/test_web.py -v`
 Expected: All PASS
 
 **Step 5: Commit**
@@ -319,7 +319,7 @@ The full HTML is large. Key changes from existing:
 
 **Step 2: Verify dashboard test still passes**
 
-Run: `cd . && .venv/bin/pytest tests/test_web.py::test_dashboard_serves_html -v`
+Run: `.venv/bin/pytest tests/test_web.py::test_dashboard_serves_html -v`
 Expected: PASS
 
 **Step 3: Commit**
@@ -371,7 +371,7 @@ def main() -> None:
 
 **Step 2: Verify import still works**
 
-Run: `cd . && .venv/bin/python -c "from macf.main import main; print('OK')"`
+Run: `.venv/bin/python -c "from macf.main import main; print('OK')"`
 Expected: OK
 
 **Step 3: Commit**
@@ -387,7 +387,7 @@ git commit -m "feat: simplify main.py for dashboard-driven configuration"
 
 **Step 1: Run all tests**
 
-Run: `cd . && .venv/bin/pytest tests/ -v --tb=short`
+Run: `.venv/bin/pytest tests/ -v --tb=short`
 Expected: All PASS
 
 **Step 2: Verify server starts**
