@@ -575,7 +575,7 @@
         document.getElementById("promptText").textContent = data.prompt;
         mcpUrl = data.mcp_url;
         document.getElementById("mcpCmdText").textContent =
-          "claude mcp add macf2-conference " + mcpUrl;
+          "claude mcp add --transport http macf2-conference " + mcpUrl;
         document.getElementById("mcpConfigText").textContent = JSON.stringify({
           "mcpServers": {
             "macf2-conference": {
