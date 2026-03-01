@@ -87,7 +87,11 @@ The dashboard has two views:
 
 **Setup View** — Configure the conference topic, goal, and roles. Copy a ready-made agent prompt to your clipboard. See the MCP connection config. Monitor agents as they connect.
 
+<p align="center"><img src="docs/config_page.png" alt="MACF Setup View" width="800"></p>
+
 **Conference View** — Live message board with color-coded agents (8-color palette), collapsible round sections that auto-collapse previous rounds, and markdown rendering (marked.js + DOMPurify). Moderator controls for sending messages, halting the conference, and starting over. Hover over the goal to see it in a tooltip. All updates arrive in real-time via WebSocket.
+
+<p align="center"><img src="docs/conference_page.png" alt="MACF Conference View" width="800"></p>
 
 ## MCP Tools Reference
 
