@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 from mcp.server.fastmcp import FastMCP, Context
@@ -39,6 +40,14 @@ def create_mcp_server(
 
     # --- Session-to-agent mapping ---
     _session_agents: dict[str, str] = {}  # client_id -> agent_id
+
+    # --- File lock conditions for blocking acquire ---
+    _file_lock_conditions: dict[str, asyncio.Condition] = {}
+
+    def _get_file_condition(file_path: str) -> asyncio.Condition:
+        if file_path not in _file_lock_conditions:
+            _file_lock_conditions[file_path] = asyncio.Condition()
+        return _file_lock_conditions[file_path]
 
     @mcp.tool()
     async def register_agent(name: str, role: str = "") -> str:
@@ -140,16 +149,25 @@ def create_mcp_server(
     @mcp.tool()
     async def acquire_file_lock(agent_id: str, file_path: str) -> str:
         """Acquire an exclusive write lock on a shared file.
-        Returns whether the lock was acquired. Only the lock holder can write.
-        This will block until the conference has been configured by the moderator."""
+        Blocks until the lock is available. Only the lock holder can write.
+        This will also block until the conference has been configured."""
         await conference.wait_for_configuration()
-        acquired = file_manager.acquire_lock(file_path, agent_id)
-        return json.dumps({"acquired": acquired, "file": file_path})
+        cond = _get_file_condition(file_path)
+        async with cond:
+            while not file_manager.acquire_lock(file_path, agent_id):
+                try:
+                    await asyncio.wait_for(cond.wait(), timeout=5.0)
+                except asyncio.TimeoutError:
+                    pass  # Retry — lock may have expired
+        return json.dumps({"acquired": True, "file": file_path})
 
     @mcp.tool()
-    def release_file_lock(agent_id: str, file_path: str) -> str:
+    async def release_file_lock(agent_id: str, file_path: str) -> str:
         """Release your write lock on a shared file."""
         file_manager.release_lock(file_path, agent_id)
+        cond = _get_file_condition(file_path)
+        async with cond:
+            cond.notify_all()
         return json.dumps({"released": True, "file": file_path})
 
     @mcp.tool()
