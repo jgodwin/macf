@@ -7,12 +7,12 @@ from pathlib import Path
 
 import uvicorn
 
-from macf2.models import ConferenceConfig
-from macf2.web.app import create_app
+from macf.models import ConferenceConfig
+from macf.web.app import create_app
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="MACF2 - Multi-Agent Conference Framework")
+    parser = argparse.ArgumentParser(description="MACF - Multi-Agent Conference Framework")
     parser.add_argument("--topic", default="", help="Pre-set conference topic (can also set from dashboard)")
     parser.add_argument("--goal", default="", help="Pre-set conference goal (can also set from dashboard)")
     parser.add_argument("--config", default=None, help="JSON config file to pre-load topic, goal, and roles")
@@ -56,7 +56,7 @@ def main() -> None:
     mcp_thread = threading.Thread(target=run_mcp, daemon=True)
     mcp_thread.start()
 
-    print("MACF2 - Multi-Agent Conference Framework")
+    print("MACF - Multi-Agent Conference Framework")
     print(f"  Dashboard:  http://{args.host}:{args.port}")
     print(f"  MCP Server: http://{args.host}:{args.mcp_port}/mcp")
     print(f"  Workspace:  {app.state.file_manager.workspace_dir.resolve()}")

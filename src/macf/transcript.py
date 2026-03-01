@@ -6,7 +6,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from macf2.models import ActionType, ConferenceState, ConferenceStatus
+from macf.models import ActionType, ConferenceState, ConferenceStatus
 
 
 def generate_session_id(state: ConferenceState) -> str:

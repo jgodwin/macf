@@ -1,16 +1,16 @@
-<p align="center"><img src="docs/banner.svg" alt="MACF2 - Multi-Agent Conference Framework" width="800"></p>
+<p align="center"><img src="docs/banner.svg" alt="MACF - Multi-Agent Conference Framework" width="800"></p>
 
-# MACF2 — Multi-Agent Conference Framework
+# MACF — Multi-Agent Conference Framework
 
 A Python framework that lets AI agents from **any provider** collaborate in structured, round-based conferences — observed through a real-time browser dashboard.
 
-## What is MACF2?
+## What is MACF?
 
-Most multi-agent systems lock you into a single AI provider. MACF2 doesn't. It uses [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) as a universal interface, so you can put **Claude Opus via Claude Code**, **Codex via Codex CLI**, **Gemini via Agentic clients**, or any other MCP-compatible agent into the same conference. They don't need to know about each other's internals — they just connect to the same MCP server and follow the protocol.
+Most multi-agent systems lock you into a single AI provider. MACF doesn't. It uses [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) as a universal interface, so you can put **Claude Opus via Claude Code**, **Codex via Codex CLI**, **Gemini via Agentic clients**, or any other MCP-compatible agent into the same conference. They don't need to know about each other's internals — they just connect to the same MCP server and follow the protocol.
 
 This means you can assign different AI models to different roles based on their strengths: have Claude architect a system design while Codex writes the implementation while Gemini reviews for security issues — all in a single structured conversation with shared files, proper turn-taking, and a human moderator watching from a live dashboard.
 
-MACF2 handles everything else: round-based turn-taking so agents don't talk over each other, exclusive file locking so they don't overwrite each other's work, real-time observation via WebSocket, and automatic transcripts of every action. You configure a topic and roles, point your agents at the MCP server, and watch them collaborate.
+MACF handles everything else: round-based turn-taking so agents don't talk over each other, exclusive file locking so they don't overwrite each other's work, real-time observation via WebSocket, and automatic transcripts of every action. You configure a topic and roles, point your agents at the MCP server, and watch them collaborate.
 
 The entire system runs as a single Python process — a FastAPI dashboard on port 8000 and a FastMCP server on port 8001 sharing in-process state. No databases, no message queues, no external services.
 
@@ -21,10 +21,10 @@ The entire system runs as a single Python process — a FastAPI dashboard on por
 pip install -e .
 
 # Run with a topic
-python -m macf2.main --topic "API Design Review" --goal "Design a REST API for task management"
+python -m macf.main --topic "API Design Review" --goal "Design a REST API for task management"
 
 # Or run with a JSON config
-python -m macf2.main --config examples/api_design_conference.json
+python -m macf.main --config examples/api_design_conference.json
 
 # Open the dashboard
 open http://127.0.0.1:8000
@@ -34,10 +34,10 @@ Connect AI agents from any MCP-compatible client:
 
 ```bash
 # Claude Code
-claude mcp add --transport http macf2 http://127.0.0.1:8001/mcp
+claude mcp add --transport http macf http://127.0.0.1:8001/mcp
 
 # Any MCP client (Claude Desktop, Codex, etc.) — add to your MCP config:
-# { "macf2": { "type": "url", "url": "http://127.0.0.1:8001/mcp" } }
+# { "macf": { "type": "url", "url": "http://127.0.0.1:8001/mcp" } }
 ```
 
 Then instruct each agent to use its MCP tools to register, read the briefing, and participate in the conference. Mix and match providers — the MCP protocol is the common language. The dashboard provides a ready-made agent prompt you can copy and paste.
@@ -137,7 +137,7 @@ Locks auto-expire after 3 minutes to prevent deadlock. Path traversal is blocked
 ### CLI Arguments
 
 ```bash
-python -m macf2.main [OPTIONS]
+python -m macf.main [OPTIONS]
 ```
 
 | Argument | Default | Description |
@@ -175,7 +175,7 @@ python -m macf2.main [OPTIONS]
 ```
 
 ```bash
-python -m macf2.main --config examples/api_design_conference.json
+python -m macf.main --config examples/api_design_conference.json
 ```
 
 ### Ports
@@ -203,7 +203,7 @@ Transcripts are automatically written when a conference ends (completion, halt, 
 To restart a conference with the same configuration as a previous session:
 
 ```bash
-python -m macf2.main --from-session sessions/20260301-143022-a1b2c3d4
+python -m macf.main --from-session sessions/20260301-143022-a1b2c3d4
 ```
 
 ## Development
@@ -228,7 +228,7 @@ pytest -v
 ## Project Structure
 
 ```
-src/macf2/
+src/macf/
     main.py              # CLI entry point
     models.py            # Pydantic data models
     conference.py        # ConferenceManager + protocol instructions

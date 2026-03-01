@@ -14,8 +14,8 @@
 
 **Files:**
 - Create: `pyproject.toml`
-- Create: `src/macf2/__init__.py`
-- Create: `src/macf2/models.py` (empty placeholder)
+- Create: `src/macf/__init__.py`
+- Create: `src/macf/models.py` (empty placeholder)
 - Create: `tests/__init__.py`
 - Create: `tests/conftest.py`
 
@@ -47,7 +47,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/macf2"]
+packages = ["src/macf"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -57,8 +57,8 @@ testpaths = ["tests"]
 **Step 2: Create directory structure and placeholder files**
 
 ```bash
-mkdir -p src/macf2/web/static tests
-touch src/macf2/__init__.py tests/__init__.py
+mkdir -p src/macf/web/static tests
+touch src/macf/__init__.py tests/__init__.py
 ```
 
 **Step 3: Create tests/conftest.py**
@@ -90,7 +90,7 @@ git commit -m "chore: project scaffolding"
 ### Task 2: Core Data Models
 
 **Files:**
-- Create: `src/macf2/models.py`
+- Create: `src/macf/models.py`
 - Create: `tests/test_models.py`
 
 **Step 1: Write tests for data models**
@@ -99,7 +99,7 @@ git commit -m "chore: project scaffolding"
 # tests/test_models.py
 import pytest
 from datetime import datetime, timezone
-from macf2.models import (
+from macf.models import (
     AgentInfo, Message, RoundAction, Round, ConferenceState,
     AgentStatus, RoundStatus, ConferenceStatus, ActionType,
 )
@@ -170,7 +170,7 @@ Expected: FAIL (import errors)
 **Step 3: Implement data models**
 
 ```python
-# src/macf2/models.py
+# src/macf/models.py
 from __future__ import annotations
 
 import uuid
@@ -270,7 +270,7 @@ Expected: All PASS
 **Step 5: Commit**
 
 ```bash
-git add src/macf2/models.py tests/test_models.py
+git add src/macf/models.py tests/test_models.py
 git commit -m "feat: core data models for conference, agents, rounds, messages"
 ```
 
@@ -279,7 +279,7 @@ git commit -m "feat: core data models for conference, agents, rounds, messages"
 ### Task 3: Conference Manager
 
 **Files:**
-- Create: `src/macf2/conference.py`
+- Create: `src/macf/conference.py`
 - Create: `tests/test_conference.py`
 
 **Step 1: Write tests for conference manager**
@@ -287,8 +287,8 @@ git commit -m "feat: core data models for conference, agents, rounds, messages"
 ```python
 # tests/test_conference.py
 import pytest
-from macf2.conference import ConferenceManager
-from macf2.models import ConferenceStatus, ActionType, AgentStatus
+from macf.conference import ConferenceManager
+from macf.models import ConferenceStatus, ActionType, AgentStatus
 
 
 @pytest.fixture
@@ -431,13 +431,13 @@ Expected: FAIL (import errors)
 **Step 3: Implement ConferenceManager**
 
 ```python
-# src/macf2/conference.py
+# src/macf/conference.py
 from __future__ import annotations
 
 import asyncio
 from typing import Any, Callable, Coroutine
 
-from macf2.models import (
+from macf.models import (
     ActionType,
     AgentInfo,
     AgentStatus,
@@ -572,7 +572,7 @@ class ConferenceManager:
         if not current.all_acted(active):
             return
         current.status = RoundStatus.COMPLETED
-        from macf2.models import _now
+        from macf.models import _now
         current.ended_at = _now()
         votes = current.end_vote_count()
         if votes > len(active) / 2:
@@ -640,7 +640,7 @@ Expected: All PASS
 **Step 5: Commit**
 
 ```bash
-git add src/macf2/conference.py tests/test_conference.py
+git add src/macf/conference.py tests/test_conference.py
 git commit -m "feat: conference manager with round-based collaboration"
 ```
 
@@ -649,7 +649,7 @@ git commit -m "feat: conference manager with round-based collaboration"
 ### Task 4: File Manager with Locking
 
 **Files:**
-- Create: `src/macf2/file_manager.py`
+- Create: `src/macf/file_manager.py`
 - Create: `tests/test_file_manager.py`
 
 **Step 1: Write tests for file manager**
@@ -659,7 +659,7 @@ git commit -m "feat: conference manager with round-based collaboration"
 import pytest
 import tempfile
 from pathlib import Path
-from macf2.file_manager import FileManager
+from macf.file_manager import FileManager
 
 
 @pytest.fixture
@@ -756,7 +756,7 @@ Expected: FAIL (import errors)
 **Step 3: Implement FileManager**
 
 ```python
-# src/macf2/file_manager.py
+# src/macf/file_manager.py
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -876,7 +876,7 @@ Expected: All PASS
 **Step 5: Commit**
 
 ```bash
-git add src/macf2/file_manager.py tests/test_file_manager.py
+git add src/macf/file_manager.py tests/test_file_manager.py
 git commit -m "feat: file manager with exclusive write locking"
 ```
 
@@ -885,7 +885,7 @@ git commit -m "feat: file manager with exclusive write locking"
 ### Task 5: MCP Server
 
 **Files:**
-- Create: `src/macf2/mcp_server.py`
+- Create: `src/macf/mcp_server.py`
 - Create: `tests/test_mcp_server.py`
 
 This task creates the MCP server that exposes conference operations as tools. Agents connect to this server and use the tools to participate.
@@ -898,7 +898,7 @@ import pytest
 import json
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
-from macf2.mcp_server import create_mcp_server
+from macf.mcp_server import create_mcp_server
 
 
 @pytest.fixture
@@ -957,7 +957,7 @@ Expected: FAIL (import errors)
 **Step 3: Implement MCP server**
 
 ```python
-# src/macf2/mcp_server.py
+# src/macf/mcp_server.py
 from __future__ import annotations
 
 import json
@@ -965,8 +965,8 @@ import tempfile
 from pathlib import Path
 from mcp.server.fastmcp import FastMCP, Context
 
-from macf2.conference import ConferenceManager
-from macf2.file_manager import FileManager
+from macf.conference import ConferenceManager
+from macf.file_manager import FileManager
 
 
 def create_mcp_server(
@@ -1103,7 +1103,7 @@ Expected: All PASS
 **Step 5: Commit**
 
 ```bash
-git add src/macf2/mcp_server.py tests/test_mcp_server.py
+git add src/macf/mcp_server.py tests/test_mcp_server.py
 git commit -m "feat: MCP server exposing conference tools"
 ```
 
@@ -1112,8 +1112,8 @@ git commit -m "feat: MCP server exposing conference tools"
 ### Task 6: Web Dashboard Backend (FastAPI + WebSocket)
 
 **Files:**
-- Create: `src/macf2/web/app.py`
-- Create: `src/macf2/web/__init__.py`
+- Create: `src/macf/web/app.py`
+- Create: `src/macf/web/__init__.py`
 - Create: `tests/test_web.py`
 
 **Step 1: Write tests for web endpoints**
@@ -1123,7 +1123,7 @@ git commit -m "feat: MCP server exposing conference tools"
 import pytest
 import json
 from httpx import AsyncClient, ASGITransport
-from macf2.web.app import create_app
+from macf.web.app import create_app
 
 
 @pytest.fixture
@@ -1208,13 +1208,13 @@ Expected: FAIL (import errors)
 **Step 3: Create web/__init__.py**
 
 ```python
-# src/macf2/web/__init__.py
+# src/macf/web/__init__.py
 ```
 
 **Step 4: Implement web app**
 
 ```python
-# src/macf2/web/app.py
+# src/macf/web/app.py
 from __future__ import annotations
 
 import asyncio
@@ -1226,9 +1226,9 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
-from macf2.conference import ConferenceManager
-from macf2.file_manager import FileManager
-from macf2.mcp_server import create_mcp_server
+from macf.conference import ConferenceManager
+from macf.file_manager import FileManager
+from macf.mcp_server import create_mcp_server
 
 
 class RegisterRequest(BaseModel):
@@ -1388,7 +1388,7 @@ Expected: All PASS (except dashboard HTML - handled in next task)
 **Step 6: Commit**
 
 ```bash
-git add src/macf2/web/ tests/test_web.py
+git add src/macf/web/ tests/test_web.py
 git commit -m "feat: FastAPI web dashboard with REST and WebSocket endpoints"
 ```
 
@@ -1397,7 +1397,7 @@ git commit -m "feat: FastAPI web dashboard with REST and WebSocket endpoints"
 ### Task 7: Web Dashboard Frontend
 
 **Files:**
-- Create: `src/macf2/web/static/index.html`
+- Create: `src/macf/web/static/index.html`
 
 **Step 1: Create the dashboard HTML/CSS/JS**
 
@@ -1409,7 +1409,7 @@ This is a single-page application that connects via WebSocket and displays the c
 - Auto-reconnecting WebSocket
 
 ```html
-<!-- src/macf2/web/static/index.html -->
+<!-- src/macf/web/static/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1738,7 +1738,7 @@ Expected: PASS
 **Step 3: Commit**
 
 ```bash
-git add src/macf2/web/static/index.html
+git add src/macf/web/static/index.html
 git commit -m "feat: real-time browser dashboard with WebSocket updates"
 ```
 
@@ -1747,14 +1747,14 @@ git commit -m "feat: real-time browser dashboard with WebSocket updates"
 ### Task 8: Main Entry Point
 
 **Files:**
-- Create: `src/macf2/main.py`
+- Create: `src/macf/main.py`
 
 **Step 1: Create the main entry point**
 
 This starts both the MCP server and the web dashboard on the same FastAPI app.
 
 ```python
-# src/macf2/main.py
+# src/macf/main.py
 from __future__ import annotations
 
 import argparse
@@ -1763,7 +1763,7 @@ from pathlib import Path
 
 import uvicorn
 
-from macf2.web.app import create_app
+from macf.web.app import create_app
 
 
 def main() -> None:
@@ -1817,13 +1817,13 @@ if __name__ == "__main__":
 
 **Step 2: Verify it imports cleanly**
 
-Run: `python -c "from macf2.main import main; print('OK')"`
+Run: `python -c "from macf.main import main; print('OK')"`
 Expected: OK
 
 **Step 3: Commit**
 
 ```bash
-git add src/macf2/main.py
+git add src/macf/main.py
 git commit -m "feat: main entry point starting dashboard and MCP server"
 ```
 
@@ -1843,8 +1843,8 @@ This test starts a conference, registers agents, runs a full round, and verifies
 import pytest
 import json
 from httpx import AsyncClient, ASGITransport
-from macf2.web.app import create_app
-from macf2.models import ConferenceStatus
+from macf.web.app import create_app
+from macf.models import ConferenceStatus
 
 
 @pytest.fixture
@@ -1954,7 +1954,7 @@ Expected: All tests PASS
 
 **Step 2: Verify the server starts**
 
-Run: `timeout 5 python -m macf2.main --topic "Test" || true`
+Run: `timeout 5 python -m macf.main --topic "Test" || true`
 Expected: Server prints startup messages (dashboard URL, MCP URL) before timing out
 
 **Step 3: Final commit with any fixups**

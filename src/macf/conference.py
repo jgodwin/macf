@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Callable, Coroutine
 
-from macf2.models import (
+from macf.models import (
     ActionType,
     AgentInfo,
     AgentStatus,
@@ -280,7 +280,7 @@ class ConferenceManager:
         self._current_turn_index += 1
         if current.all_acted(active):
             current.status = RoundStatus.COMPLETED
-            from macf2.models import _now
+            from macf.models import _now
             current.ended_at = _now()
             votes = current.end_vote_count()
             if votes > len(active) / 2:
@@ -305,7 +305,7 @@ class ConferenceManager:
         if not current.all_acted(active):
             return
         current.status = RoundStatus.COMPLETED
-        from macf2.models import _now
+        from macf.models import _now
         current.ended_at = _now()
         votes = current.end_vote_count()
         if votes > len(active) / 2:

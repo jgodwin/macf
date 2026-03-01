@@ -1,7 +1,7 @@
 import pytest
 import json
 from httpx import AsyncClient, ASGITransport
-from macf2.web.app import create_app
+from macf.web.app import create_app
 
 
 @pytest.fixture

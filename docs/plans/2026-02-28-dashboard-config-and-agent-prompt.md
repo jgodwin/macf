@@ -13,7 +13,7 @@
 ### Task 1: ConferenceManager.configure() and generate_agent_prompt()
 
 **Files:**
-- Modify: `src/macf2/conference.py`
+- Modify: `src/macf/conference.py`
 - Modify: `tests/test_conference.py`
 
 **Step 1: Write failing tests**
@@ -125,7 +125,7 @@ Expected: All PASS (22 existing + 2 new = 24)
 **Step 5: Commit**
 
 ```bash
-git add src/macf2/conference.py tests/test_conference.py
+git add src/macf/conference.py tests/test_conference.py
 git commit -m "feat: add configure() method and generate_agent_prompt()"
 ```
 
@@ -134,7 +134,7 @@ git commit -m "feat: add configure() method and generate_agent_prompt()"
 ### Task 2: REST API endpoints for configuration and prompt
 
 **Files:**
-- Modify: `src/macf2/web/app.py`
+- Modify: `src/macf/web/app.py`
 - Modify: `tests/test_web.py`
 
 **Step 1: Write failing tests**
@@ -220,7 +220,7 @@ Add inside the function body, after the existing endpoints but before the WebSoc
 
     @app.post("/api/configure")
     async def configure(req: ConfigureRequest):
-        from macf2.models import RoleConfig
+        from macf.models import RoleConfig
         role_configs = [RoleConfig(**r) for r in req.roles] if req.roles else None
         conference.configure(topic=req.topic, goal=req.goal, roles=role_configs)
         return {"status": "configured"}
@@ -231,7 +231,7 @@ Add inside the function body, after the existing endpoints but before the WebSoc
 
     @app.get("/api/prompt")
     async def get_prompt():
-        from macf2.conference import generate_agent_prompt
+        from macf.conference import generate_agent_prompt
         return {"prompt": generate_agent_prompt(mcp_url), "mcp_url": mcp_url}
 ```
 
@@ -258,7 +258,7 @@ Expected: All PASS
 **Step 5: Commit**
 
 ```bash
-git add src/macf2/web/app.py tests/test_web.py
+git add src/macf/web/app.py tests/test_web.py
 git commit -m "feat: REST endpoints for conference configuration and agent prompt"
 ```
 
@@ -267,7 +267,7 @@ git commit -m "feat: REST endpoints for conference configuration and agent promp
 ### Task 3: Dashboard frontend — setup view with configuration and prompt display
 
 **Files:**
-- Modify: `src/macf2/web/static/index.html`
+- Modify: `src/macf/web/static/index.html`
 
 This is the biggest task. The dashboard gets two views:
 
@@ -325,7 +325,7 @@ Expected: PASS
 **Step 3: Commit**
 
 ```bash
-git add src/macf2/web/static/index.html
+git add src/macf/web/static/index.html
 git commit -m "feat: dashboard setup view with config form and agent prompt display"
 ```
 
@@ -334,7 +334,7 @@ git commit -m "feat: dashboard setup view with config form and agent prompt disp
 ### Task 4: Update main.py to work with dashboard-driven config
 
 **Files:**
-- Modify: `src/macf2/main.py`
+- Modify: `src/macf/main.py`
 
 **Step 1: Simplify main.py**
 
@@ -371,13 +371,13 @@ def main() -> None:
 
 **Step 2: Verify import still works**
 
-Run: `cd . && .venv/bin/python -c "from macf2.main import main; print('OK')"`
+Run: `cd . && .venv/bin/python -c "from macf.main import main; print('OK')"`
 Expected: OK
 
 **Step 3: Commit**
 
 ```bash
-git add src/macf2/main.py
+git add src/macf/main.py
 git commit -m "feat: simplify main.py for dashboard-driven configuration"
 ```
 

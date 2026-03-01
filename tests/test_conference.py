@@ -1,6 +1,6 @@
 import pytest
-from macf2.conference import ConferenceManager
-from macf2.models import ConferenceStatus, ActionType, AgentStatus, RoleConfig
+from macf.conference import ConferenceManager
+from macf.models import ConferenceStatus, ActionType, AgentStatus, RoleConfig
 
 
 @pytest.fixture

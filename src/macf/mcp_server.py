@@ -5,9 +5,9 @@ import json
 from pathlib import Path
 from mcp.server.fastmcp import FastMCP, Context
 
-from macf2.conference import ConferenceManager
-from macf2.file_manager import FileManager
-from macf2.transcript import generate_session_id
+from macf.conference import ConferenceManager
+from macf.file_manager import FileManager
+from macf.transcript import generate_session_id
 
 
 def create_mcp_server(
@@ -37,7 +37,7 @@ def create_mcp_server(
     file_manager = FileManager(workspace_dir=workspace_dir)
 
     mcp = FastMCP(
-        name="MACF2 Conference",
+        name="MACF Conference",
         instructions=(
             f"You are participating in a multi-agent conference on: {topic}. "
             "Use the provided tools to collaborate with other agents. "

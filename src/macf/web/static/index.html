@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MACF2 - Conference Dashboard</title>
+  <title>MACF - Conference Dashboard</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -305,7 +305,7 @@
   <header>
     <div>
       <div class="topic-wrapper">
-        <h1 id="topic">MACF2 Conference</h1>
+        <h1 id="topic">MACF Conference</h1>
         <div class="topic-tooltip" id="topicTooltip">
           <div class="tooltip-label">Goal</div>
           <div id="topicTooltipText">No goal set</div>
@@ -502,7 +502,7 @@
       var event = data.event;
 
       if (event === "initial_state") {
-        document.getElementById("topic").textContent = data.topic || "MACF2 Conference";
+        document.getElementById("topic").textContent = data.topic || "MACF Conference";
         updateStatus(data.status);
         updateRound(data.current_round);
         isConfigured = data.is_configured || false;
@@ -706,10 +706,10 @@
         document.getElementById("promptText").textContent = data.prompt;
         mcpUrl = data.mcp_url;
         document.getElementById("mcpCmdText").textContent =
-          "claude mcp add --transport http macf2-conference " + mcpUrl;
+          "claude mcp add --transport http macf-conference " + mcpUrl;
         document.getElementById("mcpConfigText").textContent = JSON.stringify({
           "mcpServers": {
-            "macf2-conference": {
+            "macf-conference": {
               "type": "url",
               "url": mcpUrl
             }

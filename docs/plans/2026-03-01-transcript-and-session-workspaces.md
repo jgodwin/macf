@@ -27,16 +27,16 @@ sessions/
 
 ## Files to Create
 
-- `src/macf2/transcript.py` — Transcript generation logic
+- `src/macf/transcript.py` — Transcript generation logic
 - `tests/test_transcript.py` — Tests for transcript output
 
 ## Files to Modify
 
-- `src/macf2/conference.py` — Pass old state in `conference_reset` event so transcript can be written before state is lost
-- `src/macf2/mcp_server.py` — Use session-based workspace path, expose method to update workspace on reset
-- `src/macf2/web/app.py` — Wire transcript writing on conference end/halt/reset, create new session workspace on reset
-- `src/macf2/file_manager.py` — Add `set_workspace()` method to switch workspace directory on reset
-- `src/macf2/main.py` — Add `--sessions-dir` CLI argument, pass to create_app
+- `src/macf/conference.py` — Pass old state in `conference_reset` event so transcript can be written before state is lost
+- `src/macf/mcp_server.py` — Use session-based workspace path, expose method to update workspace on reset
+- `src/macf/web/app.py` — Wire transcript writing on conference end/halt/reset, create new session workspace on reset
+- `src/macf/file_manager.py` — Add `set_workspace()` method to switch workspace directory on reset
+- `src/macf/main.py` — Add `--sessions-dir` CLI argument, pass to create_app
 
 ---
 

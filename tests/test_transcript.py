@@ -3,13 +3,13 @@ import json
 
 import pytest
 from pathlib import Path
-from macf2.models import (
+from macf.models import (
     ConferenceState, ConferenceStatus, AgentInfo, AgentStatus,
     Message, Round, RoundStatus, RoundAction, ActionType,
     RoleConfig, ConferenceConfig,
 )
-from macf2.transcript import generate_session_id, write_transcript, write_config
-from macf2.file_manager import FileManager
+from macf.transcript import generate_session_id, write_transcript, write_config
+from macf.file_manager import FileManager
 
 
 def _make_state():

@@ -9,10 +9,10 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
-from macf2.conference import ConferenceManager
-from macf2.file_manager import FileManager
-from macf2.mcp_server import create_mcp_server
-from macf2.transcript import generate_session_id, write_config, write_transcript
+from macf.conference import ConferenceManager
+from macf.file_manager import FileManager
+from macf.mcp_server import create_mcp_server
+from macf.transcript import generate_session_id, write_config, write_transcript
 
 
 class ConfigureRequest(BaseModel):
@@ -67,7 +67,7 @@ def create_app(
     mcp_host: str = "127.0.0.1",
     mcp_port: int = 8001,
 ) -> FastAPI:
-    app = FastAPI(title="MACF2 Dashboard")
+    app = FastAPI(title="MACF Dashboard")
     ws_manager = ConnectionManager()
     mcp_url = f"http://{mcp_host}:{mcp_port}/mcp"
 
@@ -178,7 +178,7 @@ def create_app(
 
     @app.post("/api/configure")
     async def configure(req: ConfigureRequest):
-        from macf2.models import RoleConfig
+        from macf.models import RoleConfig
         role_configs = [RoleConfig(**r) for r in req.roles] if req.roles else None
         conference.configure(topic=req.topic, goal=req.goal, roles=role_configs)
         return {"status": "configured"}
@@ -189,7 +189,7 @@ def create_app(
 
     @app.get("/api/prompt")
     async def get_prompt():
-        from macf2.conference import generate_agent_prompt
+        from macf.conference import generate_agent_prompt
         return {"prompt": generate_agent_prompt(mcp_url), "mcp_url": mcp_url}
 
     # --- WebSocket for real-time updates ---

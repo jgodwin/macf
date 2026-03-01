@@ -1,7 +1,7 @@
 import pytest
 import tempfile
 from pathlib import Path
-from macf2.file_manager import FileManager
+from macf.file_manager import FileManager
 
 
 @pytest.fixture

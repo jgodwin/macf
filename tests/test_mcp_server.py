@@ -1,6 +1,6 @@
 import pytest
 import json
-from macf2.mcp_server import create_mcp_server
+from macf.mcp_server import create_mcp_server
 
 
 @pytest.fixture

@@ -16,9 +16,9 @@ sessions/
 
 ## Files to Modify
 
-- `src/macf2/transcript.py` — Add `write_config(state, roles, output_path)` function
-- `src/macf2/web/app.py` — Save config on `conference_configured` and `conference_started` events
-- `src/macf2/main.py` — Add `--from-session` CLI arg, load config.json from session dir
+- `src/macf/transcript.py` — Add `write_config(state, roles, output_path)` function
+- `src/macf/web/app.py` — Save config on `conference_configured` and `conference_started` events
+- `src/macf/main.py` — Add `--from-session` CLI arg, load config.json from session dir
 - `tests/test_transcript.py` — Tests for config save/load
 - `README.md` — Document `--from-session` in CLI args table
 
@@ -55,10 +55,10 @@ Add `--from-session` argument that accepts a path to a session directory. On sta
 
 ```bash
 # Restart from a previous session
-python -m macf2.main --from-session sessions/20260301-143022-a1b2c3d4
+python -m macf.main --from-session sessions/20260301-143022-a1b2c3d4
 
 # Equivalent to:
-python -m macf2.main --config sessions/20260301-143022-a1b2c3d4/config.json
+python -m macf.main --config sessions/20260301-143022-a1b2c3d4/config.json
 ```
 
 ## Task 4: Tests

@@ -8,8 +8,8 @@ Currently all agents act in parallel each round (any order). The user wants:
 
 ## Files to Modify
 
-- `src/macf2/conference.py` — Turn order tracking, enforcement, updated protocol instructions
-- `src/macf2/web/static/index.html` — Auto-collapse, turn indicator in round badge, `turn_started` event handling
+- `src/macf/conference.py` — Turn order tracking, enforcement, updated protocol instructions
+- `src/macf/web/static/index.html` — Auto-collapse, turn indicator in round badge, `turn_started` event handling
 - `tests/test_conference.py` — New tests for round-robin enforcement
 
 No changes needed to `models.py`, `mcp_server.py`, or `app.py` — ValueError propagates naturally through MCP tools, and new event fields are auto-broadcast.

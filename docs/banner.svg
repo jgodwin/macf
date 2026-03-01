@@ -160,8 +160,8 @@
   <line x1="209" y1="172" x2="260" y2="172" stroke="#f59e0b" stroke-width="0.5" opacity="0.25" stroke-dasharray="3,3"/>
   <line x1="591" y1="172" x2="540" y2="172" stroke="#ec4899" stroke-width="0.5" opacity="0.25" stroke-dasharray="3,3"/>
 
-  <!-- ===== MACF2 branding ===== -->
-  <text x="760" y="288" font-family="'SF Mono', 'Fira Code', 'Consolas', monospace" font-size="11" fill="#475569" text-anchor="end" letter-spacing="2">MACF2</text>
+  <!-- ===== MACF branding ===== -->
+  <text x="760" y="288" font-family="'SF Mono', 'Fira Code', 'Consolas', monospace" font-size="11" fill="#475569" text-anchor="end" letter-spacing="2">MACF</text>
 
   <!-- Subtle tagline -->
   <text x="760" y="276" font-family="-apple-system, 'Segoe UI', sans-serif" font-size="8" fill="#334155" text-anchor="end" letter-spacing="0.5">Multi-Agent Conference Framework</text>

@@ -1,6 +1,6 @@
 import pytest
 from datetime import datetime, timezone
-from macf2.models import (
+from macf.models import (
     AgentInfo, Message, RoundAction, Round, ConferenceState,
     AgentStatus, RoundStatus, ConferenceStatus, ActionType,
 )

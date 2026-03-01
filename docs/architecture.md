@@ -1,15 +1,15 @@
-# MACF2 Architecture
+# MACF Architecture
 
 **Multi-Agent Conference Framework 2 -- Technical Reference**
 
-This document describes the internal architecture of MACF2 using ASCII art
+This document describes the internal architecture of MACF using ASCII art
 diagrams. Every fact is drawn from the actual source code.
 
 ---
 
 ## 1. System Overview
 
-MACF2 runs as a single Python process hosting two HTTP servers on separate
+MACF runs as a single Python process hosting two HTTP servers on separate
 ports. The dashboard server (FastAPI on port 8000) serves the browser UI, a
 REST API, and a WebSocket endpoint. The MCP server (FastMCP on port 8001)
 exposes 15 tools and 1 prompt to AI agents via Streamable HTTP. Both servers
@@ -18,7 +18,7 @@ no IPC, no database, no message broker.
 
 ```
  ┌─────────────────────────────────────────────────────────────────────┐
- │                     macf2 process (Python)                          │
+ │                     macf process (Python)                          │
  │                                                                     │
  │  Main Thread                          Daemon Thread                 │
  │  ┌────────────────────────┐           ┌─────────────────────────┐   │
@@ -332,7 +332,7 @@ is halted, or is reset.
 ## 7. Project Structure
 
 ```
-  src/macf2/
+  src/macf/
   ├── __init__.py              Package init
   ├── main.py                  CLI entry point (argparse) + server startup
   ├── models.py                Pydantic models (7 models, 4 enums)
@@ -425,4 +425,4 @@ is met.
 
 ---
 
-*Generated for MACF2 -- Multi-Agent Conference Framework 2*
+*Generated for MACF -- Multi-Agent Conference Framework 2*
