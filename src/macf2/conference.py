@@ -210,6 +210,13 @@ class ConferenceManager:
         self.state.status = ConferenceStatus.HALTED
         self._emit("conference_halted", {"reason": reason})
 
+    def reset(self) -> None:
+        """Reset all state back to a fresh conference."""
+        self.state = ConferenceState(topic="", goal="")
+        self._roles = []
+        self._configured = asyncio.Event()
+        self._emit("conference_reset", {})
+
     def add_moderator_message(self, content: str) -> None:
         msg = Message(
             agent_id="moderator",

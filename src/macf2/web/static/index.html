@@ -17,6 +17,20 @@
       display: flex; justify-content: space-between; align-items: center;
     }
     header h1 { font-size: 20px; color: #f1f5f9; }
+    .topic-wrapper { position: relative; display: inline-block; cursor: default; }
+    .topic-tooltip {
+      display: none; position: absolute; top: 100%; left: 0;
+      margin-top: 8px; padding: 12px 16px; background: #1e293b;
+      border: 1px solid #334155; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      min-width: 280px; max-width: 480px; z-index: 100;
+      font-size: 13px; color: #94a3b8; line-height: 1.5; font-weight: 400;
+      white-space: normal;
+    }
+    .topic-tooltip .tooltip-label {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+      color: #64748b; margin-bottom: 4px;
+    }
+    .topic-wrapper:hover .topic-tooltip { display: block; }
     .status-badge {
       padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: 600;
     }
@@ -214,7 +228,7 @@
     .message .msg-author { font-weight: 600; color: #60a5fa; font-size: 14px; }
     .message.moderator .msg-author { color: #fbbf24; }
     .message .msg-time { font-size: 12px; color: #64748b; }
-    .message .msg-body { font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+    .message .msg-body { font-size: 14px; line-height: 1.6; }
     .pass-notice, .vote-notice {
       text-align: center; color: #64748b; font-size: 13px;
       margin-bottom: 12px; font-style: italic;
@@ -240,19 +254,69 @@
     .btn-send:hover { background: #2563eb; }
     .btn-halt { background: #dc2626; color: white; }
     .btn-halt:hover { background: #b91c1c; }
+
+    /* Start Over button */
+    .btn-reset {
+      background: none; border: 1px solid #475569; border-radius: 6px;
+      padding: 4px 12px; color: #94a3b8; cursor: pointer; font-size: 12px;
+      font-weight: 500; transition: color 0.2s, border-color 0.2s;
+    }
+    .btn-reset:hover { color: #f87171; border-color: #f87171; }
+
+    /* Markdown rendering in message bodies */
+    .msg-body code {
+      background: #334155; padding: 2px 6px; border-radius: 4px;
+      font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, monospace;
+      font-size: 13px; color: #e2e8f0;
+    }
+    .msg-body pre {
+      background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+      padding: 12px 16px; overflow-x: auto; margin: 8px 0;
+      font-family: "SF Mono", "Fira Code", "Fira Mono", Menlo, monospace;
+      font-size: 13px; line-height: 1.5;
+    }
+    .msg-body pre code {
+      background: none; padding: 0; border-radius: 0; font-size: inherit;
+    }
+    .msg-body h1 { font-size: 1.4em; margin: 12px 0 6px; color: #f1f5f9; }
+    .msg-body h2 { font-size: 1.2em; margin: 10px 0 6px; color: #f1f5f9; }
+    .msg-body h3 { font-size: 1.1em; margin: 8px 0 4px; color: #f1f5f9; }
+    .msg-body ul, .msg-body ol { padding-left: 24px; margin: 6px 0; }
+    .msg-body li { margin-bottom: 4px; }
+    .msg-body a { color: #60a5fa; text-decoration: underline; }
+    .msg-body a:hover { color: #93c5fd; }
+    .msg-body p { margin: 6px 0; }
+    .msg-body blockquote {
+      border-left: 3px solid #475569; padding-left: 12px; margin: 8px 0;
+      color: #94a3b8; font-style: italic;
+    }
+    .msg-body table { border-collapse: collapse; margin: 8px 0; width: 100%; }
+    .msg-body th, .msg-body td {
+      border: 1px solid #334155; padding: 6px 10px; text-align: left;
+    }
+    .msg-body th { background: #1e293b; color: #f1f5f9; }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
 </head>
 <body>
   <header>
     <div>
-      <h1 id="topic">MACF2 Conference</h1>
+      <div class="topic-wrapper">
+        <h1 id="topic">MACF2 Conference</h1>
+        <div class="topic-tooltip" id="topicTooltip">
+          <div class="tooltip-label">Goal</div>
+          <div id="topicTooltipText">No goal set</div>
+        </div>
+      </div>
       <div class="connection-status" id="connStatus">
         <span class="dot dot-disconnected" id="connDot"></span>
         <span id="connText">Disconnected</span>
       </div>
     </div>
-    <div>
-      <span id="roundBadge" style="margin-right:12px; font-size:14px; color:#94a3b8;">Round: -</span>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <button class="btn-reset" id="btnReset">Start Over</button>
+      <span id="roundBadge" style="font-size:14px; color:#94a3b8;">Round: -</span>
       <span class="status-badge status-waiting" id="statusBadge">waiting</span>
     </div>
   </header>
@@ -357,6 +421,7 @@
     let connectedAgentCount = 0;
     let isConfigured = false;
     let mcpUrl = "";
+    let conferenceGoal = "";
 
     // --- Safe DOM helpers ---
     function el(tag, attrs, children) {
@@ -380,6 +445,11 @@
 
     function clearChildren(node) {
       while (node.firstChild) node.removeChild(node.firstChild);
+    }
+
+    function updateGoalTooltip(goal) {
+      conferenceGoal = goal || "";
+      document.getElementById("topicTooltipText").textContent = conferenceGoal || "No goal set";
     }
 
     // --- WebSocket ---
@@ -411,6 +481,7 @@
         updateStatus(data.status);
         updateRound(data.current_round);
         isConfigured = data.is_configured || false;
+        updateGoalTooltip(data.goal);
 
         if (data.topic) document.getElementById("setupTopic").value = data.topic;
         if (data.goal) document.getElementById("setupGoal").value = data.goal;
@@ -434,8 +505,15 @@
           document.getElementById("setupTopic").value = data.topic;
           document.getElementById("topic").textContent = data.topic;
         }
+        if (data.goal !== undefined) {
+          updateGoalTooltip(data.goal);
+        }
         loadPrompt();
         updateStartButton();
+      }
+
+      if (event === "conference_reset") {
+        location.reload();
       }
 
       if (event === "agent_joined" || event === "agent_left" ||
@@ -518,6 +596,7 @@
           return;
         }
         document.getElementById("topic").textContent = topic;
+        updateGoalTooltip(goal);
         isConfigured = true;
         var saveStatus = document.getElementById("saveStatus");
         saveStatus.classList.add("visible");
@@ -710,12 +789,18 @@
     }
 
     function addMessage(author, content, round, isModerator) {
+      var bodyDiv = el("div", { className: "msg-body" });
+      if (typeof marked !== "undefined" && typeof DOMPurify !== "undefined") {
+        bodyDiv.innerHTML = DOMPurify.sanitize(marked.parse(content));
+      } else {
+        bodyDiv.textContent = content;
+      }
       var msgEl = el("div", { className: "message" + (isModerator ? " moderator" : "") }, [
         el("div", { className: "msg-header" }, [
           el("span", { className: "msg-author", textContent: author }),
           el("span", { className: "msg-time", textContent: "Round " + round }),
         ]),
-        el("div", { className: "msg-body", textContent: content }),
+        bodyDiv,
       ]);
       // Append to current round group's body, or fallback to messages container
       var target = _currentRoundGroup
@@ -759,7 +844,24 @@
       if (ws) ws.send(JSON.stringify({ type: "halt", reason: "Halted by moderator" }));
     }
 
+    // --- Start Over ---
+    async function resetConference() {
+      if (!confirm("Start a new conference? This will reset everything.")) return;
+      try {
+        var resp = await fetch("/api/reset", { method: "POST" });
+        if (resp.ok) {
+          location.reload();
+        } else {
+          var err = await resp.json().catch(function() { return {}; });
+          alert("Error: " + (err.detail || resp.statusText));
+        }
+      } catch (e) {
+        alert("Failed to reset: " + e.message);
+      }
+    }
+
     // --- Event listeners ---
+    document.getElementById("btnReset").addEventListener("click", resetConference);
     document.getElementById("btnSaveConfig").addEventListener("click", saveConfig);
     document.getElementById("btnAddRole").addEventListener("click", addRole);
     document.getElementById("btnCopyPrompt").addEventListener("click", function() {

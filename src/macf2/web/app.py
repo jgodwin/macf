@@ -139,6 +139,11 @@ def create_app(
         conference.halt(req.reason)
         return {"status": "halted"}
 
+    @app.post("/api/reset")
+    async def reset_conference():
+        conference.reset()
+        return {"status": "reset"}
+
     @app.post("/api/configure")
     async def configure(req: ConfigureRequest):
         from macf2.models import RoleConfig
