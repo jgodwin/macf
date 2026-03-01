@@ -152,6 +152,7 @@ class ConferenceManager:
         self.state.agents[agent_id].status = AgentStatus.ACTED
         self._emit("agent_acted", {
             "agent_id": agent_id,
+            "agent_name": self.state.agents[agent_id].name,
             "action_type": action.type.value,
             "round_number": current.number,
         })

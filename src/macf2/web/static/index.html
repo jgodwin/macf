@@ -560,12 +560,12 @@
       }
 
       if (event === "agent_acted" && data.action_type === "pass") {
-        var notice = el("div", { className: "pass-notice", textContent: "Agent passed this round" });
+        var notice = el("div", { className: "pass-notice", textContent: (data.agent_name || "Agent") + " passed this round" });
         appendToCurrentRound(notice);
       }
 
       if (event === "agent_acted" && data.action_type === "vote_to_end") {
-        var voteNotice = el("div", { className: "vote-notice", textContent: "An agent voted to end the conference" });
+        var voteNotice = el("div", { className: "vote-notice", textContent: (data.agent_name || "Agent") + " voted to end the conference" });
         appendToCurrentRound(voteNotice);
       }
 
