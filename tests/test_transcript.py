@@ -1,12 +1,14 @@
 import re
+import json
 
 import pytest
 from pathlib import Path
 from macf2.models import (
     ConferenceState, ConferenceStatus, AgentInfo, AgentStatus,
     Message, Round, RoundStatus, RoundAction, ActionType,
+    RoleConfig, ConferenceConfig,
 )
-from macf2.transcript import generate_session_id, write_transcript
+from macf2.transcript import generate_session_id, write_transcript, write_config
 from macf2.file_manager import FileManager
 
 
@@ -202,3 +204,71 @@ def test_file_manager_set_workspace(tmp_path):
     # Locks should be cleared — create file in new workspace and acquire lock
     fm.create_file("test.txt", "new content")
     assert fm.acquire_lock("test.txt", "agent2")
+
+
+def test_write_config_basic(tmp_path):
+    """Write a basic config and verify all fields are persisted correctly."""
+    state = ConferenceState(topic="Test Topic", goal="Test Goal")
+    roles = [
+        RoleConfig(name="Architect", description="designs systems", instructions="Focus on structure"),
+        RoleConfig(name="Developer", description="implements code", instructions="Follow best practices"),
+    ]
+    output = tmp_path / "config.json"
+
+    result = write_config(state, roles, output)
+
+    assert result is True
+    assert output.exists()
+
+    # Parse and verify the written config
+    data = json.loads(output.read_text())
+    assert data["topic"] == "Test Topic"
+    assert data["goal"] == "Test Goal"
+    assert len(data["roles"]) == 2
+    assert data["roles"][0]["name"] == "Architect"
+    assert data["roles"][0]["description"] == "designs systems"
+    assert data["roles"][0]["instructions"] == "Focus on structure"
+    assert data["roles"][1]["name"] == "Developer"
+    assert data["roles"][1]["description"] == "implements code"
+    assert data["roles"][1]["instructions"] == "Follow best practices"
+
+
+def test_write_config_skips_empty_topic(tmp_path):
+    """Config with empty topic should be skipped and file should not exist."""
+    state = ConferenceState(topic="", goal="Test Goal")
+    roles = [RoleConfig(name="TestRole", description="test", instructions="test")]
+    output = tmp_path / "config.json"
+
+    result = write_config(state, roles, output)
+
+    assert result is False
+    assert not output.exists()
+
+
+def test_write_config_loadable_by_conference_config(tmp_path):
+    """Written config should be loadable by ConferenceConfig.model_validate_json()."""
+    state = ConferenceState(topic="Integration Test", goal="Verify Compatibility")
+    roles = [
+        RoleConfig(name="Analyst", description="analyzes data", instructions="Be thorough"),
+        RoleConfig(name="Presenter", description="presents findings", instructions="Be clear"),
+    ]
+    output = tmp_path / "config.json"
+
+    # Write the config
+    result = write_config(state, roles, output)
+    assert result is True
+
+    # Load it back with ConferenceConfig
+    json_content = output.read_text()
+    loaded_config = ConferenceConfig.model_validate_json(json_content)
+
+    # Verify all fields match
+    assert loaded_config.topic == "Integration Test"
+    assert loaded_config.goal == "Verify Compatibility"
+    assert len(loaded_config.roles) == 2
+    assert loaded_config.roles[0].name == "Analyst"
+    assert loaded_config.roles[0].description == "analyzes data"
+    assert loaded_config.roles[0].instructions == "Be thorough"
+    assert loaded_config.roles[1].name == "Presenter"
+    assert loaded_config.roles[1].description == "presents findings"
+    assert loaded_config.roles[1].instructions == "Be clear"

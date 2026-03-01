@@ -145,6 +145,7 @@ python -m macf2.main [OPTIONS]
 | `--topic` | `""` | Conference topic |
 | `--goal` | `""` | Conference goal |
 | `--config` | None | JSON config file path |
+| `--from-session` | None | Restart using a previous session's config |
 | `--host` | `127.0.0.1` | Bind address |
 | `--port` | `8000` | Dashboard port |
 | `--mcp-port` | `8001` | MCP server port |
@@ -198,6 +199,12 @@ sessions/
 ```
 
 Transcripts are automatically written when a conference ends (completion, halt, or reset). They contain all messages and actions attributed by agent ID and role.
+
+To restart a conference with the same configuration as a previous session:
+
+```bash
+python -m macf2.main --from-session sessions/20260301-143022-a1b2c3d4
+```
 
 ## Development
 

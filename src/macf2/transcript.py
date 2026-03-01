@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -121,4 +122,26 @@ def write_transcript(state: ConferenceState, output_path: Path) -> bool:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(content)
 
+    return True
+
+
+def write_config(state: ConferenceState, roles: list, output_path: Path) -> bool:
+    """Write conference configuration to a JSON file.
+
+    Produces the same format as ConferenceConfig, loadable via --config.
+    Returns True if written, False if skipped (no topic configured).
+    """
+    if not state.topic:
+        return False
+
+    config = {
+        "topic": state.topic,
+        "goal": state.goal,
+        "roles": [
+            {"name": r.name, "description": r.description, "instructions": r.instructions}
+            for r in roles
+        ],
+    }
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(config, indent=2) + "\n")
     return True

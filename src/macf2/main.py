@@ -16,6 +16,7 @@ def main() -> None:
     parser.add_argument("--topic", default="", help="Pre-set conference topic (can also set from dashboard)")
     parser.add_argument("--goal", default="", help="Pre-set conference goal (can also set from dashboard)")
     parser.add_argument("--config", default=None, help="JSON config file to pre-load topic, goal, and roles")
+    parser.add_argument("--from-session", default=None, help="Restart from a previous session's config.json")
     parser.add_argument("--host", default="127.0.0.1", help="Host to bind to")
     parser.add_argument("--port", type=int, default=8000, help="Port to bind to")
     parser.add_argument("--sessions-dir", default=None, help="Base directory for session data (default: ./sessions/)")
@@ -24,8 +25,15 @@ def main() -> None:
 
     # Load config if provided, otherwise start blank for dashboard-driven setup
     config = None
+    if args.config and args.from_session:
+        parser.error("Cannot use both --config and --from-session")
     if args.config:
         config = ConferenceConfig.model_validate_json(Path(args.config).read_text())
+    elif args.from_session:
+        config_path = Path(args.from_session) / "config.json"
+        if not config_path.exists():
+            parser.error(f"No config.json found in session directory: {args.from_session}")
+        config = ConferenceConfig.model_validate_json(config_path.read_text())
 
     sessions_dir = Path(args.sessions_dir) if args.sessions_dir else None
     app = create_app(

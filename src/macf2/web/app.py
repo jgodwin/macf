@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from macf2.conference import ConferenceManager
 from macf2.file_manager import FileManager
 from macf2.mcp_server import create_mcp_server
-from macf2.transcript import generate_session_id, write_transcript
+from macf2.transcript import generate_session_id, write_config, write_transcript
 
 
 class ConfigureRequest(BaseModel):
@@ -89,10 +89,19 @@ def create_app(
 
     sessions_base = mcp_components["sessions_dir"]
 
+    def _save_config() -> None:
+        """Save current conference config to the session directory."""
+        session_id = generate_session_id(conference.state)
+        session_dir = sessions_base / session_id
+        write_config(conference.state, conference._roles, session_dir / "config.json")
+
     async def on_transcript_event(event_type: str, data: dict) -> None:
-        if event_type in ("conference_ended", "conference_halted"):
+        if event_type in ("conference_configured", "conference_started"):
+            _save_config()
+        elif event_type in ("conference_ended", "conference_halted"):
             session_id = generate_session_id(conference.state)
             session_dir = sessions_base / session_id
+            _save_config()
             write_transcript(conference.state, session_dir / "transcript.md")
         elif event_type == "conference_reset":
             old_state = data.get("old_state")
