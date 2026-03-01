@@ -53,6 +53,8 @@ class ConnectionManager:
 
 def create_app(
     topic: str = "Untitled Conference",
+    goal: str = "",
+    roles: list | None = None,
     workspace_dir: Path | None = None,
     mcp_host: str = "127.0.0.1",
     mcp_port: int = 8001,
@@ -61,7 +63,8 @@ def create_app(
     ws_manager = ConnectionManager()
 
     mcp_components = create_mcp_server(
-        topic=topic, workspace_dir=workspace_dir,
+        topic=topic, goal=goal, roles=roles,
+        workspace_dir=workspace_dir,
         mcp_host=mcp_host, mcp_port=mcp_port,
     )
     conference: ConferenceManager = mcp_components["conference"]

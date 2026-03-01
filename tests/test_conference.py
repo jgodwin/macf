@@ -1,6 +1,6 @@
 import pytest
 from macf2.conference import ConferenceManager
-from macf2.models import ConferenceStatus, ActionType, AgentStatus
+from macf2.models import ConferenceStatus, ActionType, AgentStatus, RoleConfig
 
 
 @pytest.fixture
@@ -133,3 +133,54 @@ def test_get_round_info(conf):
     assert info["round_number"] == 1
     assert info["status"] == "active"
     assert "A1" in info["pending"]
+
+
+def test_briefing_includes_topic_and_protocol(conf):
+    a1 = conf.register_agent("Architect", role="system designer")
+    briefing = conf.get_briefing(a1)
+    assert "Design a REST API" in briefing
+    assert "Architect" in briefing
+    assert "system designer" in briefing
+    assert "ROUND PROTOCOL" in briefing
+    assert "post_message" in briefing
+
+
+def test_briefing_includes_goal():
+    conf = ConferenceManager(topic="API Design", goal="Produce an OpenAPI spec")
+    a1 = conf.register_agent("Architect")
+    briefing = conf.get_briefing(a1)
+    assert "Produce an OpenAPI spec" in briefing
+
+
+def test_briefing_shows_other_participants(conf):
+    a1 = conf.register_agent("Architect", role="designs systems")
+    a2 = conf.register_agent("Developer", role="writes code")
+    briefing = conf.get_briefing(a1)
+    assert "Developer" in briefing
+    assert "writes code" in briefing
+
+
+def test_role_configs_applied_on_register():
+    roles = [
+        RoleConfig(name="Architect", description="system designer", instructions="Focus on structure"),
+        RoleConfig(name="Developer", description="coder", instructions="Write clean code"),
+    ]
+    conf = ConferenceManager(topic="Test", roles=roles)
+    a1 = conf.register_agent("Architect")
+    agent = conf.state.agents[a1]
+    assert agent.role == "system designer"
+    assert agent.instructions == "Focus on structure"
+
+
+def test_available_roles():
+    roles = [
+        RoleConfig(name="Architect", description="system designer"),
+        RoleConfig(name="Developer", description="coder"),
+    ]
+    conf = ConferenceManager(topic="Test", roles=roles)
+    avail = conf.get_available_roles()
+    assert len(avail) == 2
+    conf.register_agent("Architect")
+    avail = conf.get_available_roles()
+    assert len(avail) == 1
+    assert avail[0]["name"] == "Developer"

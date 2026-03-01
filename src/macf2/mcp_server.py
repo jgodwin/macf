@@ -11,6 +11,8 @@ from macf2.file_manager import FileManager
 
 def create_mcp_server(
     topic: str = "Untitled Conference",
+    goal: str = "",
+    roles: list | None = None,
     workspace_dir: Path | None = None,
     mcp_host: str = "127.0.0.1",
     mcp_port: int = 8001,
@@ -22,7 +24,7 @@ def create_mcp_server(
     if workspace_dir is None:
         workspace_dir = Path(tempfile.mkdtemp(prefix="macf2_"))
 
-    conference = ConferenceManager(topic=topic)
+    conference = ConferenceManager(topic=topic, goal=goal, roles=roles)
     file_manager = FileManager(workspace_dir=workspace_dir)
 
     mcp = FastMCP(
@@ -41,10 +43,23 @@ def create_mcp_server(
 
     @mcp.tool()
     def register_agent(name: str, role: str = "") -> str:
-        """Register yourself as a conference participant. Returns your agent_id.
-        You must call this before any other action."""
+        """Register yourself as a conference participant. Returns your agent_id
+        and a full briefing with the topic, goal, your role, other participants,
+        and the round protocol. You must call this before any other action.
+        Call get_available_roles first to see which roles are open."""
         agent_id = conference.register_agent(name, role=role)
-        return json.dumps({"agent_id": agent_id, "topic": conference.state.topic})
+        briefing = conference.get_briefing(agent_id)
+        return json.dumps({
+            "agent_id": agent_id,
+            "topic": conference.state.topic,
+            "briefing": briefing,
+        })
+
+    @mcp.tool()
+    def get_available_roles() -> str:
+        """List pre-defined roles that haven't been claimed yet.
+        Call this before register_agent to see which roles you can take."""
+        return json.dumps(conference.get_available_roles())
 
     @mcp.tool()
     def get_conference_status() -> str:
@@ -135,5 +150,13 @@ def create_mcp_server(
         """Write to a shared file. You must hold the lock first (acquire_file_lock)."""
         file_manager.write_file(file_path, content, agent_id)
         return json.dumps({"status": "written", "file": file_path})
+
+    # --- MCP Prompt ---
+
+    @mcp.prompt()
+    def conference_briefing(agent_id: str) -> str:
+        """Get your full conference briefing: topic, goal, your role,
+        other participants, and the round protocol."""
+        return conference.get_briefing(agent_id)
 
     return {"mcp": mcp, "conference": conference, "file_manager": file_manager}

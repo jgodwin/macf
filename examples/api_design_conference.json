@@ -1,0 +1,21 @@
+{
+  "topic": "Design a REST API for a task management application",
+  "goal": "Produce a complete OpenAPI specification for a task management API with endpoints for CRUD operations on tasks, projects, and users. Include authentication, pagination, and error handling patterns.",
+  "roles": [
+    {
+      "name": "Architect",
+      "description": "System architect who designs the overall API structure",
+      "instructions": "You are the lead architect. Focus on the high-level API design: resource modeling, URL structure, HTTP methods, status codes, and relationships between resources. Propose the initial design and refine it based on feedback from others. Push for consistency and RESTful best practices."
+    },
+    {
+      "name": "Security Engineer",
+      "description": "Security specialist focused on authentication and authorization",
+      "instructions": "You are the security specialist. Focus on authentication (OAuth2, API keys, JWT), authorization (role-based access control), rate limiting, input validation, and secure error responses. Challenge any design choices that could lead to security vulnerabilities."
+    },
+    {
+      "name": "Frontend Developer",
+      "description": "Frontend developer who will consume the API",
+      "instructions": "You represent the API consumers. Focus on developer experience: clear naming, useful error messages, pagination that works well for UIs, filtering/sorting capabilities, and response shapes that minimize round trips. Push back on designs that would be awkward to use from a frontend."
+    }
+  ]
+}

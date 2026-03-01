@@ -78,9 +78,24 @@ class Round(BaseModel):
         return sum(1 for a in self.actions.values() if a.type == ActionType.VOTE_TO_END)
 
 
+class RoleConfig(BaseModel):
+    """Pre-defined role slot that agents can claim when registering."""
+    name: str
+    description: str = ""
+    instructions: str = ""
+
+
+class ConferenceConfig(BaseModel):
+    """Full conference configuration, loadable from a JSON file."""
+    topic: str
+    goal: str = ""
+    roles: list[RoleConfig] = Field(default_factory=list)
+
+
 class ConferenceState(BaseModel):
     id: str = Field(default_factory=_uuid)
     topic: str
+    goal: str = ""
     status: ConferenceStatus = ConferenceStatus.WAITING
     agents: dict[str, AgentInfo] = Field(default_factory=dict)
     rounds: list[Round] = Field(default_factory=list)
