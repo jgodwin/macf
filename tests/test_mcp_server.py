@@ -4,9 +4,9 @@ from macf2.mcp_server import create_mcp_server
 
 
 @pytest.fixture
-def mcp_app():
+def mcp_app(tmp_path):
     """Create a fresh MCP server with conference for each test."""
-    return create_mcp_server(topic="Test conference")
+    return create_mcp_server(topic="Test conference", sessions_dir=tmp_path / "sessions")
 
 
 @pytest.mark.asyncio

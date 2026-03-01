@@ -21,6 +21,12 @@ class FileManager:
         self.workspace_dir.mkdir(parents=True, exist_ok=True)
         self._locks: dict[str, FileLock] = {}
 
+    def set_workspace(self, workspace_dir: Path) -> None:
+        """Switch to a new workspace directory, clearing all locks."""
+        self.workspace_dir = workspace_dir
+        self.workspace_dir.mkdir(parents=True, exist_ok=True)
+        self._locks = {}
+
     def _resolve(self, file_path: str) -> Path:
         resolved = (self.workspace_dir / file_path).resolve()
         if not str(resolved).startswith(str(self.workspace_dir.resolve())):

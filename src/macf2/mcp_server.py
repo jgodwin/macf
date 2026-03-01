@@ -7,24 +7,33 @@ from mcp.server.fastmcp import FastMCP, Context
 
 from macf2.conference import ConferenceManager
 from macf2.file_manager import FileManager
+from macf2.transcript import generate_session_id
 
 
 def create_mcp_server(
     topic: str = "Untitled Conference",
     goal: str = "",
     roles: list | None = None,
-    workspace_dir: Path | None = None,
+    workspace_dir: Path | None = None,  # kept for backwards compat; sessions_dir takes precedence
+    sessions_dir: Path | None = None,
     mcp_host: str = "127.0.0.1",
     mcp_port: int = 8001,
 ) -> dict:
     """Create an MCP server wired to a conference and file manager.
 
-    Returns a dict with keys: mcp, conference, file_manager.
+    Returns a dict with keys: mcp, conference, file_manager, sessions_dir.
     """
-    if workspace_dir is None:
-        workspace_dir = Path.cwd() / "workspace"
-
     conference = ConferenceManager(topic=topic, goal=goal, roles=roles)
+
+    if sessions_dir is None:
+        sessions_dir = Path.cwd() / "sessions"
+
+    session_id = generate_session_id(conference.state)
+    session_dir = sessions_dir / session_id
+    workspace_dir = session_dir / "workspace"
+
+    print(f"Session directory: {session_dir}")
+
     file_manager = FileManager(workspace_dir=workspace_dir)
 
     mcp = FastMCP(
@@ -187,4 +196,4 @@ def create_mcp_server(
         other participants, and the round protocol."""
         return conference.get_briefing(agent_id)
 
-    return {"mcp": mcp, "conference": conference, "file_manager": file_manager}
+    return {"mcp": mcp, "conference": conference, "file_manager": file_manager, "sessions_dir": sessions_dir}

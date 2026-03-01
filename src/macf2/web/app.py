@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from macf2.conference import ConferenceManager
 from macf2.file_manager import FileManager
 from macf2.mcp_server import create_mcp_server
+from macf2.transcript import generate_session_id, write_transcript
 
 
 class ConfigureRequest(BaseModel):
@@ -62,6 +63,7 @@ def create_app(
     goal: str = "",
     roles: list | None = None,
     workspace_dir: Path | None = None,
+    sessions_dir: Path | None = None,
     mcp_host: str = "127.0.0.1",
     mcp_port: int = 8001,
 ) -> FastAPI:
@@ -72,6 +74,7 @@ def create_app(
     mcp_components = create_mcp_server(
         topic=topic, goal=goal, roles=roles,
         workspace_dir=workspace_dir,
+        sessions_dir=sessions_dir,
         mcp_host=mcp_host, mcp_port=mcp_port,
     )
     conference: ConferenceManager = mcp_components["conference"]
@@ -83,6 +86,26 @@ def create_app(
         await ws_manager.broadcast({"event": event_type, **data})
 
     conference.on_event(on_conference_event)
+
+    sessions_base = mcp_components["sessions_dir"]
+
+    async def on_transcript_event(event_type: str, data: dict) -> None:
+        if event_type in ("conference_ended", "conference_halted"):
+            session_id = generate_session_id(conference.state)
+            session_dir = sessions_base / session_id
+            write_transcript(conference.state, session_dir / "transcript.md")
+        elif event_type == "conference_reset":
+            old_state = data.get("old_state")
+            if old_state and old_state.rounds:
+                old_session_id = generate_session_id(old_state)
+                old_session_dir = sessions_base / old_session_id
+                write_transcript(old_state, old_session_dir / "transcript.md")
+            # Create new session workspace
+            new_session_id = generate_session_id(conference.state)
+            new_session_dir = sessions_base / new_session_id
+            file_manager.set_workspace(new_session_dir / "workspace")
+
+    conference.on_event(on_transcript_event)
 
     # --- REST endpoints for dashboard ---
 

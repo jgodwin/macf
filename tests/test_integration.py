@@ -7,7 +7,7 @@ from macf2.models import ConferenceStatus
 
 @pytest.fixture
 def app(tmp_path):
-    return create_app(topic="Integration Test", workspace_dir=tmp_path)
+    return create_app(topic="Integration Test", sessions_dir=tmp_path / "sessions")
 
 
 @pytest.mark.asyncio

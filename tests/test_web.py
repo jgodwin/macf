@@ -5,8 +5,8 @@ from macf2.web.app import create_app
 
 
 @pytest.fixture
-def app():
-    return create_app(topic="Test Conference")
+def app(tmp_path):
+    return create_app(topic="Test Conference", sessions_dir=tmp_path / "sessions")
 
 
 @pytest.mark.asyncio
