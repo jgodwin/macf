@@ -51,6 +51,7 @@ def main() -> None:
     print("MACF2 - Multi-Agent Conference Framework")
     print(f"  Dashboard:  http://{args.host}:{args.port}")
     print(f"  MCP Server: http://{args.host}:{args.mcp_port}/mcp")
+    print(f"  Workspace:  {app.state.file_manager.workspace_dir.resolve()}")
     if args.topic or (config and config.topic):
         print(f"  Topic: {args.topic or config.topic}")
     else:

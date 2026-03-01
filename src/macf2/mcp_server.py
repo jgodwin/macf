@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import tempfile
 from pathlib import Path
 from mcp.server.fastmcp import FastMCP, Context
 
@@ -22,7 +21,7 @@ def create_mcp_server(
     Returns a dict with keys: mcp, conference, file_manager.
     """
     if workspace_dir is None:
-        workspace_dir = Path(tempfile.mkdtemp(prefix="macf2_"))
+        workspace_dir = Path.cwd() / "workspace"
 
     conference = ConferenceManager(topic=topic, goal=goal, roles=roles)
     file_manager = FileManager(workspace_dir=workspace_dir)
@@ -115,8 +114,10 @@ def create_mcp_server(
     # --- File tools ---
 
     @mcp.tool()
-    def create_shared_file(file_path: str, content: str = "") -> str:
-        """Create a new shared file that all agents can collaborate on."""
+    async def create_shared_file(file_path: str, content: str = "") -> str:
+        """Create a new shared file that all agents can collaborate on.
+        This will block until the conference has been configured by the moderator."""
+        await conference.wait_for_configuration()
         file_manager.create_file(file_path, content)
         return json.dumps({"status": "created", "file": file_path})
 
@@ -137,9 +138,11 @@ def create_mcp_server(
         })
 
     @mcp.tool()
-    def acquire_file_lock(agent_id: str, file_path: str) -> str:
+    async def acquire_file_lock(agent_id: str, file_path: str) -> str:
         """Acquire an exclusive write lock on a shared file.
-        Returns whether the lock was acquired. Only the lock holder can write."""
+        Returns whether the lock was acquired. Only the lock holder can write.
+        This will block until the conference has been configured by the moderator."""
+        await conference.wait_for_configuration()
         acquired = file_manager.acquire_lock(file_path, agent_id)
         return json.dumps({"acquired": acquired, "file": file_path})
 
@@ -150,8 +153,10 @@ def create_mcp_server(
         return json.dumps({"released": True, "file": file_path})
 
     @mcp.tool()
-    def write_shared_file(agent_id: str, file_path: str, content: str) -> str:
-        """Write to a shared file. You must hold the lock first (acquire_file_lock)."""
+    async def write_shared_file(agent_id: str, file_path: str, content: str) -> str:
+        """Write to a shared file. You must hold the lock first (acquire_file_lock).
+        This will block until the conference has been configured by the moderator."""
+        await conference.wait_for_configuration()
         file_manager.write_file(file_path, content, agent_id)
         return json.dumps({"status": "written", "file": file_path})
 
