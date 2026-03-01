@@ -184,3 +184,24 @@ def test_available_roles():
     avail = conf.get_available_roles()
     assert len(avail) == 1
     assert avail[0]["name"] == "Developer"
+
+
+def test_configure_sets_topic_goal_roles():
+    conf = ConferenceManager()
+    conf.configure(
+        topic="Build a CLI tool",
+        goal="Produce a working Python CLI",
+        roles=[RoleConfig(name="Architect", description="designs systems")],
+    )
+    assert conf.state.topic == "Build a CLI tool"
+    assert conf.state.goal == "Produce a working Python CLI"
+    assert len(conf._roles) == 1
+
+
+def test_configure_fails_after_start():
+    conf = ConferenceManager(topic="Test")
+    conf.register_agent("A1")
+    conf.register_agent("A2")
+    conf.start()
+    with pytest.raises(ValueError, match="Cannot reconfigure"):
+        conf.configure(topic="New topic")

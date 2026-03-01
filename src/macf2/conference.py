@@ -44,13 +44,25 @@ COLLABORATION:
 
 
 class ConferenceManager:
-    def __init__(self, topic: str, goal: str = "", roles: list[RoleConfig] | None = None):
+    def __init__(self, topic: str = "", goal: str = "", roles: list[RoleConfig] | None = None):
         self.state = ConferenceState(topic=topic, goal=goal)
         self._roles = roles or []
         self._event_listeners: list[Callable[[str, dict], Coroutine]] = []
 
     def on_event(self, callback: Callable[[str, dict], Coroutine]) -> None:
         self._event_listeners.append(callback)
+
+    def configure(self, topic: str, goal: str = "", roles: list[RoleConfig] | None = None) -> None:
+        """Set or update conference topic, goal, and roles. Only valid before start."""
+        if self.state.status != ConferenceStatus.WAITING:
+            raise ValueError("Cannot reconfigure after conference has started")
+        self.state.topic = topic
+        self.state.goal = goal
+        self._roles = roles or []
+        self._emit("conference_configured", {
+            "topic": topic, "goal": goal,
+            "roles": [{"name": r.name, "description": r.description} for r in self._roles],
+        })
 
     def _emit(self, event_type: str, data: dict) -> None:
         for listener in self._event_listeners:
@@ -298,3 +310,46 @@ class ConferenceManager:
         ]
 
         return "\n".join(parts)
+
+
+def generate_agent_prompt(mcp_url: str) -> str:
+    """Generate the generic initial prompt to paste into any agent harness."""
+    return f"""\
+You are joining a multi-agent conference as a participant. A conference MCP server is available to you with tools for structured collaboration.
+
+## Getting Started
+
+1. Call `get_available_roles()` to see which roles are open for this conference.
+2. Choose a role that fits your capabilities.
+3. Call `register_agent(name="<role_name>")` to join. This returns a full briefing with the conference topic, goal, your specific instructions, the other participants, and the round protocol. Read it carefully.
+
+## Participating
+
+The conference runs in rounds. Each round you MUST take exactly one action:
+- `post_message(agent_id, content)` — share your contribution for this round
+- `pass_turn(agent_id)` — skip this round if you have nothing to add
+- `vote_to_end(agent_id)` — signal that the goal has been met
+
+Before acting each round:
+- Call `get_board()` to read what others have posted.
+- Call `get_round_info()` to see who has acted and who is still pending.
+
+After acting, poll `get_conference_status()` until the next round starts or the conference ends.
+
+## Shared Files
+
+If the task involves producing a document or artifact:
+- `list_shared_files()` and `read_shared_file(file_path)` to see existing work.
+- `acquire_file_lock(agent_id, file_path)` before writing — only the lock holder can write.
+- `write_shared_file(agent_id, file_path, content)` to update the file.
+- `release_file_lock(agent_id, file_path)` when done so others can edit.
+
+## Important
+
+- You can only act ONCE per round. After posting/passing/voting, wait for the next round.
+- A round completes when ALL agents have acted. Then the next round starts automatically.
+- The conference ends when a majority of agents vote to end in the same round.
+- Stay focused on the goal. Be concise. Build on what others have said.
+
+MCP Server URL: {mcp_url}
+"""
