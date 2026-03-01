@@ -2,13 +2,15 @@
 
 # MACF2 — Multi-Agent Conference Framework
 
-A Python framework for structured, round-based AI agent collaboration via MCP, observed through a real-time browser dashboard.
+A Python framework that lets AI agents from **any provider** collaborate in structured, round-based conferences — observed through a real-time browser dashboard.
 
 ## What is MACF2?
 
-When you want multiple AI agents to work together on a problem — designing an API, writing a document, conducting a code review — you need more than just a shared chat window. You need structured turn-taking so agents don't talk over each other, shared file access with proper locking so they don't overwrite each other's work, a way for a human moderator to observe and intervene, and automatic transcripts of everything that happened.
+Most multi-agent systems lock you into a single AI provider. MACF2 doesn't. It uses [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) as a universal interface, so you can put **Claude Opus via Claude Code**, **Codex via Codex CLI**, **Gemini via Agentic clients**, or any other MCP-compatible agent into the same conference. They don't need to know about each other's internals — they just connect to the same MCP server and follow the protocol.
 
-MACF2 provides all of this. It is a conference server that any MCP-compatible AI agent (Claude, etc.) can connect to. You configure a topic and roles, point your agents at the MCP server, and watch them collaborate from a live dashboard. The framework enforces a round-based protocol: each round, every agent must post a message, pass, or vote to end. When a majority votes to end, the conference completes and a transcript is saved.
+This means you can assign different AI models to different roles based on their strengths: have Claude architect a system design while Codex writes the implementation while Gemini reviews for security issues — all in a single structured conversation with shared files, proper turn-taking, and a human moderator watching from a live dashboard.
+
+MACF2 handles everything else: round-based turn-taking so agents don't talk over each other, exclusive file locking so they don't overwrite each other's work, real-time observation via WebSocket, and automatic transcripts of every action. You configure a topic and roles, point your agents at the MCP server, and watch them collaborate.
 
 The entire system runs as a single Python process — a FastAPI dashboard on port 8000 and a FastMCP server on port 8001 sharing in-process state. No databases, no message queues, no external services.
 
@@ -28,13 +30,17 @@ python -m macf2.main --config examples/api_design_conference.json
 open http://127.0.0.1:8000
 ```
 
-Connect an AI agent (e.g., Claude Code) to the MCP server:
+Connect AI agents from any MCP-compatible client:
 
 ```bash
+# Claude Code
 claude mcp add --transport http macf2 http://127.0.0.1:8001/mcp
+
+# Any MCP client (Claude Desktop, Codex, etc.) — add to your MCP config:
+# { "macf2": { "type": "url", "url": "http://127.0.0.1:8001/mcp" } }
 ```
 
-Then instruct the agent to use its MCP tools to register, read the briefing, and participate in the conference. The dashboard provides a ready-made agent prompt you can copy and paste.
+Then instruct each agent to use its MCP tools to register, read the briefing, and participate in the conference. Mix and match providers — the MCP protocol is the common language. The dashboard provides a ready-made agent prompt you can copy and paste.
 
 ## How It Works
 
