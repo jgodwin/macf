@@ -14,7 +14,7 @@ class FileLock:
 
 
 class FileManager:
-    DEFAULT_LOCK_TIMEOUT = 300  # seconds
+    DEFAULT_LOCK_TIMEOUT = 180  # 3 minutes — auto-release to prevent deadlock
 
     def __init__(self, workspace_dir: Path):
         self.workspace_dir = Path(workspace_dir)

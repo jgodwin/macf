@@ -146,24 +146,18 @@ def create_mcp_server(
             "lock": lock,
         })
 
-    LOCK_ACQUIRE_TIMEOUT = 180  # 3 minutes
-
     @mcp.tool()
     async def acquire_file_lock(agent_id: str, file_path: str) -> str:
         """Acquire an exclusive write lock on a shared file.
-        Blocks until the lock is available (up to 3 minutes). Only the lock
-        holder can write. Also blocks until the conference has been configured."""
+        Blocks until the lock is available. Only the lock holder can write.
+        Locks auto-expire after 3 minutes to prevent deadlock.
+        Also blocks until the conference has been configured."""
         await conference.wait_for_configuration()
         cond = _get_file_condition(file_path)
-        deadline = asyncio.get_event_loop().time() + LOCK_ACQUIRE_TIMEOUT
         async with cond:
             while not file_manager.acquire_lock(file_path, agent_id):
-                remaining = deadline - asyncio.get_event_loop().time()
-                if remaining <= 0:
-                    return json.dumps({"acquired": False, "file": file_path,
-                                       "error": "Timed out waiting for lock"})
                 try:
-                    await asyncio.wait_for(cond.wait(), timeout=min(remaining, 5.0))
+                    await asyncio.wait_for(cond.wait(), timeout=5.0)
                 except asyncio.TimeoutError:
                     pass  # Retry — lock may have expired
         return json.dumps({"acquired": True, "file": file_path})
