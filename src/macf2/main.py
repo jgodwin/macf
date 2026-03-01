@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import argparse
-import sys
+import asyncio
+import threading
 from pathlib import Path
 
 import uvicorn
@@ -28,20 +29,20 @@ def main() -> None:
     args = parser.parse_args()
 
     workspace = Path(args.workspace) if args.workspace else None
-    app = create_app(topic=args.topic, workspace_dir=workspace)
+    app = create_app(
+        topic=args.topic,
+        workspace_dir=workspace,
+        mcp_host=args.host,
+        mcp_port=args.mcp_port,
+    )
 
     # Run MCP server in a background thread on a separate port
     mcp = app.state.mcp
 
-    import threading
-    import asyncio
-
     def run_mcp():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-        loop.run_until_complete(
-            mcp.run_async(transport="streamable-http", host=args.host, port=args.mcp_port)
-        )
+        loop.run_until_complete(mcp.run_streamable_http_async())
 
     mcp_thread = threading.Thread(target=run_mcp, daemon=True)
     mcp_thread.start()

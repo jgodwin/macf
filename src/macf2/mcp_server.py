@@ -12,6 +12,8 @@ from macf2.file_manager import FileManager
 def create_mcp_server(
     topic: str = "Untitled Conference",
     workspace_dir: Path | None = None,
+    mcp_host: str = "127.0.0.1",
+    mcp_port: int = 8001,
 ) -> dict:
     """Create an MCP server wired to a conference and file manager.
 
@@ -30,6 +32,8 @@ def create_mcp_server(
             "Use the provided tools to collaborate with other agents. "
             "Each round, you must either post a message, pass, or vote to end."
         ),
+        host=mcp_host,
+        port=mcp_port,
     )
 
     # --- Session-to-agent mapping ---

@@ -54,11 +54,16 @@ class ConnectionManager:
 def create_app(
     topic: str = "Untitled Conference",
     workspace_dir: Path | None = None,
+    mcp_host: str = "127.0.0.1",
+    mcp_port: int = 8001,
 ) -> FastAPI:
     app = FastAPI(title="MACF2 Dashboard")
     ws_manager = ConnectionManager()
 
-    mcp_components = create_mcp_server(topic=topic, workspace_dir=workspace_dir)
+    mcp_components = create_mcp_server(
+        topic=topic, workspace_dir=workspace_dir,
+        mcp_host=mcp_host, mcp_port=mcp_port,
+    )
     conference: ConferenceManager = mcp_components["conference"]
     file_manager: FileManager = mcp_components["file_manager"]
     mcp = mcp_components["mcp"]
